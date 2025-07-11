@@ -169,9 +169,9 @@ namespace Dynamis.Scripts.Behaviours
         /// 添加黑板条件装饰器
         /// </summary>
         public BehaviourTreeBuilder BlackboardCondition(string name, string key, object expectedValue = null, 
-            BlackboardConditionDecorator.CompareType compareType = BlackboardConditionDecorator.CompareType.Exists)
+            BlackboardConditionNode.CompareType compareType = BlackboardConditionNode.CompareType.Exists)
         {
-            var node = new BlackboardConditionDecorator(key, expectedValue, compareType) { name = name };
+            var node = new BlackboardConditionNode(key, expectedValue, compareType) { name = name };
             AddChild(node);
             return this;
         }
@@ -180,9 +180,9 @@ namespace Dynamis.Scripts.Behaviours
         /// 添加距离条件装饰器
         /// </summary>
         public BehaviourTreeBuilder DistanceCondition(string name, Transform target, float distance, 
-            DistanceConditionDecorator.CompareType compareType = DistanceConditionDecorator.CompareType.Less)
+            DistanceConditionNode.CompareType compareType = DistanceConditionNode.CompareType.Less)
         {
-            var node = new DistanceConditionDecorator(target, distance, compareType) { name = name };
+            var node = new DistanceConditionNode(target, distance, compareType) { name = name };
             AddChild(node);
             return this;
         }
@@ -191,9 +191,9 @@ namespace Dynamis.Scripts.Behaviours
         /// 添加距离条件装饰器（从黑板获取目标）
         /// </summary>
         public BehaviourTreeBuilder DistanceCondition(string name, string targetKey, float distance, 
-            DistanceConditionDecorator.CompareType compareType = DistanceConditionDecorator.CompareType.Less)
+            DistanceConditionNode.CompareType compareType = DistanceConditionNode.CompareType.Less)
         {
-            var node = new DistanceConditionDecorator(targetKey, distance, compareType) { name = name };
+            var node = new DistanceConditionNode(targetKey, distance, compareType) { name = name };
             AddChild(node);
             return this;
         }
@@ -203,7 +203,7 @@ namespace Dynamis.Scripts.Behaviours
         /// </summary>
         public BehaviourTreeBuilder TimeCondition(string name = "TimeCondition", float targetTime = 1.0f)
         {
-            var node = new TimeConditionDecorator(targetTime) { name = name };
+            var node = new TimeConditionNode(targetTime) { name = name };
             AddChild(node);
             return this;
         }
@@ -213,7 +213,7 @@ namespace Dynamis.Scripts.Behaviours
         /// </summary>
         public BehaviourTreeBuilder RandomCondition(string name = "RandomCondition", float successProbability = 0.5f)
         {
-            var node = new RandomConditionDecorator(successProbability) { name = name };
+            var node = new RandomConditionNode(successProbability) { name = name };
             AddChild(node);
             return this;
         }
@@ -223,7 +223,7 @@ namespace Dynamis.Scripts.Behaviours
         /// </summary>
         public BehaviourTreeBuilder CooldownCondition(string name = "CooldownCondition", float cooldownTime = 1.0f)
         {
-            var node = new CooldownConditionDecorator(cooldownTime) { name = name };
+            var node = new CooldownConditionNode(cooldownTime) { name = name };
             AddChild(node);
             return this;
         }
@@ -233,7 +233,7 @@ namespace Dynamis.Scripts.Behaviours
         /// </summary>
         public BehaviourTreeBuilder CustomCondition(string name = "CustomCondition", Func<bool> conditionFunc = null)
         {
-            var node = new CustomConditionDecorator(conditionFunc) { name = name };
+            var node = new CustomConditionNode(conditionFunc) { name = name };
             AddChild(node);
             return this;
         }
@@ -294,27 +294,6 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder RandomResult(string name = "RandomResult", float successProbability = 0.5f)
         {
             var node = new RandomResultNode(successProbability) { name = name };
-            AddChild(node);
-            return this;
-        }
-
-        /// <summary>
-        /// 添加黑板条件
-        /// </summary>
-        public BehaviourTreeBuilder BlackboardCondition(string name, string key, object expectedValue, 
-            BlackboardConditionNode.CompareType compareType = BlackboardConditionNode.CompareType.Equals)
-        {
-            var node = new BlackboardConditionNode(key, expectedValue, compareType) { name = name };
-            AddChild(node);
-            return this;
-        }
-
-        /// <summary>
-        /// 添加设置黑板值动作
-        /// </summary>
-        public BehaviourTreeBuilder SetBlackboardValue(string name, string key, object value)
-        {
-            var node = new SetBlackboardValueNode(key, value) { name = name };
             AddChild(node);
             return this;
         }

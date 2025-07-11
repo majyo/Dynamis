@@ -63,14 +63,6 @@ namespace Dynamis.Scripts.Behaviours
     }
 
     /// <summary>
-    /// 条件节点基类 - 检查条件的节点
-    /// </summary>
-    public abstract class ConditionNode : ContextAwareNode
-    {
-        // 条件节点特有的逻辑可以在这里添加
-    }
-
-    /// <summary>
     /// 等待节点 - 等待指定时间
     /// </summary>
     public class WaitNode : ActionNode

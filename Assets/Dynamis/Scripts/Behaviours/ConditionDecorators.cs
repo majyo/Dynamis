@@ -5,7 +5,7 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 条件装饰器基类 - 根据条件决定是否执行子节点
     /// </summary>
-    public abstract class ConditionDecorator : DecoratorNode
+    public abstract class ConditionNode : DecoratorNode
     {
         /// <summary>
         /// 评估条件
@@ -30,7 +30,7 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 黑板条件装饰器 - 检查黑板中的值
     /// </summary>
-    public class BlackboardConditionDecorator : ConditionDecorator
+    public class BlackboardConditionNode : ConditionNode
     {
         private string key;
         private object expectedValue;
@@ -48,7 +48,7 @@ namespace Dynamis.Scripts.Behaviours
             NotExists
         }
 
-        public BlackboardConditionDecorator(string key, object expectedValue = null, CompareType compareType = CompareType.Exists)
+        public BlackboardConditionNode(string key, object expectedValue = null, CompareType compareType = CompareType.Exists)
         {
             this.key = key;
             this.expectedValue = expectedValue;
@@ -57,7 +57,7 @@ namespace Dynamis.Scripts.Behaviours
 
         protected override BehaviourNode CreateClone()
         {
-            return new BlackboardConditionDecorator(key, expectedValue, compareType);
+            return new BlackboardConditionNode(key, expectedValue, compareType);
         }
 
         protected override bool EvaluateCondition()
@@ -154,7 +154,7 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 距离条件装饰器 - 检查与目标的距离
     /// </summary>
-    public class DistanceConditionDecorator : ConditionDecorator
+    public class DistanceConditionNode : ConditionNode
     {
         private Transform target;
         private string targetKey;
@@ -170,14 +170,14 @@ namespace Dynamis.Scripts.Behaviours
             Equals
         }
 
-        public DistanceConditionDecorator(Transform target, float distance, CompareType compareType = CompareType.Less)
+        public DistanceConditionNode(Transform target, float distance, CompareType compareType = CompareType.Less)
         {
             this.target = target;
             this.distance = distance;
             this.compareType = compareType;
         }
 
-        public DistanceConditionDecorator(string targetKey, float distance, CompareType compareType = CompareType.Less)
+        public DistanceConditionNode(string targetKey, float distance, CompareType compareType = CompareType.Less)
         {
             this.targetKey = targetKey;
             this.distance = distance;
@@ -187,9 +187,9 @@ namespace Dynamis.Scripts.Behaviours
         protected override BehaviourNode CreateClone()
         {
             if (target != null)
-                return new DistanceConditionDecorator(target, distance, compareType);
+                return new DistanceConditionNode(target, distance, compareType);
             else
-                return new DistanceConditionDecorator(targetKey, distance, compareType);
+                return new DistanceConditionNode(targetKey, distance, compareType);
         }
 
         protected override bool EvaluateCondition()
@@ -237,18 +237,18 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 时间条件装饰器 - 检查经过的时间
     /// </summary>
-    public class TimeConditionDecorator : ConditionDecorator
+    public class TimeConditionNode : ConditionNode
     {
         private float targetTime;
         private string timeKey;
         private float startTime;
 
-        public TimeConditionDecorator(float targetTime)
+        public TimeConditionNode(float targetTime)
         {
             this.targetTime = targetTime;
         }
 
-        public TimeConditionDecorator(string timeKey, float targetTime)
+        public TimeConditionNode(string timeKey, float targetTime)
         {
             this.timeKey = timeKey;
             this.targetTime = targetTime;
@@ -257,9 +257,9 @@ namespace Dynamis.Scripts.Behaviours
         protected override BehaviourNode CreateClone()
         {
             if (!string.IsNullOrEmpty(timeKey))
-                return new TimeConditionDecorator(timeKey, targetTime);
+                return new TimeConditionNode(timeKey, targetTime);
             else
-                return new TimeConditionDecorator(targetTime);
+                return new TimeConditionNode(targetTime);
         }
 
         protected override void OnStart()
@@ -286,20 +286,20 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 随机条件装饰器 - 根据概率随机判断条件
     /// </summary>
-    public class RandomConditionDecorator : ConditionDecorator
+    public class RandomConditionNode : ConditionNode
     {
         private float successProbability;
         private bool hasEvaluated = false;
         private bool lastResult = false;
 
-        public RandomConditionDecorator(float successProbability = 0.5f)
+        public RandomConditionNode(float successProbability = 0.5f)
         {
             this.successProbability = Mathf.Clamp01(successProbability);
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new RandomConditionDecorator(successProbability);
+            return new RandomConditionNode(successProbability);
         }
 
         protected override void OnStart()
@@ -323,19 +323,19 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 冷却条件装饰器 - 在冷却时间内阻止执行
     /// </summary>
-    public class CooldownConditionDecorator : ConditionDecorator
+    public class CooldownConditionNode : ConditionNode
     {
         private float cooldownTime;
         private float lastExecutionTime = -1;
 
-        public CooldownConditionDecorator(float cooldownTime = 1.0f)
+        public CooldownConditionNode(float cooldownTime = 1.0f)
         {
             this.cooldownTime = cooldownTime;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new CooldownConditionDecorator(cooldownTime);
+            return new CooldownConditionNode(cooldownTime);
         }
 
         protected override bool EvaluateCondition()
@@ -367,18 +367,18 @@ namespace Dynamis.Scripts.Behaviours
     /// <summary>
     /// 自定义条件装饰器 - 使用自定义函数评估条件
     /// </summary>
-    public class CustomConditionDecorator : ConditionDecorator
+    public class CustomConditionNode : ConditionNode
     {
         private System.Func<bool> conditionFunc;
 
-        public CustomConditionDecorator(System.Func<bool> conditionFunc)
+        public CustomConditionNode(System.Func<bool> conditionFunc)
         {
             this.conditionFunc = conditionFunc;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new CustomConditionDecorator(conditionFunc);
+            return new CustomConditionNode(conditionFunc);
         }
 
         protected override bool EvaluateCondition()

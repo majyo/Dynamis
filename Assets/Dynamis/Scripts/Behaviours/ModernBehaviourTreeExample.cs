@@ -29,8 +29,8 @@ namespace Dynamis.Scripts.Behaviours
                 .Root<SelectorNode>() // 主选择器
                     
                     // 攻击行为 - 条件装饰器包装动作
-                    .BlackboardCondition("Attack Condition", "target", null, BlackboardConditionDecorator.CompareType.NotEquals)
-                        .DistanceCondition("Attack Range", "target", attackDistance, DistanceConditionDecorator.CompareType.Less)
+                    .BlackboardCondition("Attack Condition", "target", null, BlackboardConditionNode.CompareType.NotEquals)
+                        .DistanceCondition("Attack Range", "target", attackDistance, DistanceConditionNode.CompareType.Less)
                             .Sequence("Attack Sequence")
                                 .Log("Attack Log", "开始攻击目标！")
                                 .Node(new AttackAction())
@@ -42,9 +42,9 @@ namespace Dynamis.Scripts.Behaviours
                         .Back()
                     
                     // 追击行为 - 多层条件装饰器
-                    .BlackboardCondition("Chase Condition", "target", null, BlackboardConditionDecorator.CompareType.NotEquals)
-                        .DistanceCondition("Chase Range", "target", chaseDistance, DistanceConditionDecorator.CompareType.Less)
-                            .DistanceCondition("Not In Attack Range", "target", attackDistance, DistanceConditionDecorator.CompareType.Greater)
+                    .BlackboardCondition("Chase Condition", "target", null, BlackboardConditionNode.CompareType.NotEquals)
+                        .DistanceCondition("Chase Range", "target", chaseDistance, DistanceConditionNode.CompareType.Less)
+                            .DistanceCondition("Not In Attack Range", "target", attackDistance, DistanceConditionNode.CompareType.Greater)
                                 .Sequence("Chase Sequence")
                                     .Log("Chase Log", "开始追击目标！")
                                     .Node(new ChaseAction())
@@ -90,9 +90,9 @@ namespace Dynamis.Scripts.Behaviours
                 .Root<SelectorNode>()
                     
                     // 逃跑行为 - 多重条件检查
-                    .BlackboardCondition("Low Health", "health", 30f, BlackboardConditionDecorator.CompareType.Less)
-                        .BlackboardCondition("Has Enemy", "enemy", null, BlackboardConditionDecorator.CompareType.NotEquals)
-                            .DistanceCondition("Enemy Close", "enemy", 10f, DistanceConditionDecorator.CompareType.Less)
+                    .BlackboardCondition("Low Health", "health", 30f, BlackboardConditionNode.CompareType.Less)
+                        .BlackboardCondition("Has Enemy", "enemy", null, BlackboardConditionNode.CompareType.NotEquals)
+                            .DistanceCondition("Enemy Close", "enemy", 10f, DistanceConditionNode.CompareType.Less)
                                 .Sequence("Flee Sequence")
                                     .Log("Flee Log", "血量过低，开始逃跑！", LogType.Warning)
                                     .Node(new FleeAction())
@@ -102,9 +102,9 @@ namespace Dynamis.Scripts.Behaviours
                         .Back()
                     
                     // 治疗行为 - 带冷却的条件检查
-                    .BlackboardCondition("Need Heal", "health", 50f, BlackboardConditionDecorator.CompareType.Less)
+                    .BlackboardCondition("Need Heal", "health", 50f, BlackboardConditionNode.CompareType.Less)
                         .CooldownCondition("Heal Cooldown", 10f) // 10秒冷却
-                            .BlackboardCondition("Has Potion", "potions", 0, BlackboardConditionDecorator.CompareType.Greater)
+                            .BlackboardCondition("Has Potion", "potions", 0, BlackboardConditionNode.CompareType.Greater)
                                 .Sequence("Heal Sequence")
                                     .Log("Heal Log", "使用治疗药水")
                                     .Node(new UseHealPotionAction())
@@ -114,9 +114,9 @@ namespace Dynamis.Scripts.Behaviours
                         .Back()
                     
                     // 战斗行为 - 复杂的战斗逻辑
-                    .BlackboardCondition("Combat Ready", "health", 20f, BlackboardConditionDecorator.CompareType.Greater)
-                        .BlackboardCondition("Has Target", "target", null, BlackboardConditionDecorator.CompareType.NotEquals)
-                            .DistanceCondition("In Combat Range", "target", 8f, DistanceConditionDecorator.CompareType.Less)
+                    .BlackboardCondition("Combat Ready", "health", 20f, BlackboardConditionNode.CompareType.Greater)
+                        .BlackboardCondition("Has Target", "target", null, BlackboardConditionNode.CompareType.NotEquals)
+                            .DistanceCondition("In Combat Range", "target", 8f, DistanceConditionNode.CompareType.Less)
                                 .Selector("Combat Selector")
                                     
                                     // 特殊攻击 - 有概率使用

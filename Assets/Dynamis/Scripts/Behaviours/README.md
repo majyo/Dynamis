@@ -21,13 +21,13 @@
 
 ### 3. 装饰节点 (DecoratorNodes.cs)
 
-- **InverterNode**: 反转子节点的成功/失败状态
-- **RepeaterNode**: 重复执行子节点指定次数
-- **RepeatUntilFailNode**: 重复执行直到失败
-- **RepeatUntilSuccessNode**: 重复执行直到成功
-- **TimeoutNode**: 超时控制
-- **CooldownNode**: 冷却时间控制
-- **ConditionalNode**: 条件执行
+- **InverterNode**: 反转子节点结果
+- **RepeaterNode**: 重复执行子节点
+- **RepeatUntilFailNode**: 重复直到失败
+- **RepeatUntilSuccessNode**: 重复直到成功
+- **TimeoutNode**: 超时装饰器
+- **CooldownNode**: 冷却装饰器
+- **ConditionalNode**: 条件装饰器
 
 ### 4. 叶子节点 (LeafNodes.cs)
 
@@ -38,12 +38,6 @@
 - **SuccessNode**: 总是返回成功
 - **FailureNode**: 总是返回失败
 - **RandomResultNode**: 随机返回成功或失败
-
-**条件节点 (ConditionNodes.cs):**
-- **BlackboardConditionNode**: 检查黑板中的值
-- **DistanceConditionNode**: 检查与目标的距离
-- **TimeConditionNode**: 检查经过的时间
-- **RandomConditionNode**: 随机条件
 
 ### 5. 支持系统
 
@@ -66,7 +60,7 @@ public class AIController : MonoBehaviour
         var tree = BehaviourTreeBuilder.Create()
             .Root<SelectorNode>()
                 .Sequence("Combat")
-                    .BlackboardCondition("HasTarget", "target", null, BlackboardConditionNode.CompareType.NotEquals)
+                    .BlackboardCondition("HasTarget", "target", null)
                     .Node(new AttackAction())
                     .Back()
                 .Sequence("Patrol")
