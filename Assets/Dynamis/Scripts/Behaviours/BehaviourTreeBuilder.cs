@@ -244,7 +244,7 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder Wait(string name = "Wait", float waitTime = 1.0f)
         {
             var node = new WaitNode(waitTime) { name = name };
-            AddChild(node);
+            AddChild(node, stay: true);
             return this;
         }
 
@@ -254,7 +254,7 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder RandomWait(string name = "RandomWait", float minWaitTime = 0.5f, float maxWaitTime = 2.0f)
         {
             var node = new RandomWaitNode(minWaitTime, maxWaitTime) { name = name };
-            AddChild(node);
+            AddChild(node, stay: true);
             return this;
         }
 
@@ -264,7 +264,7 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder Log(string name = "Log", string message = "Log message", LogType logType = LogType.Log)
         {
             var node = new LogNode(message, logType) { name = name };
-            AddChild(node);
+            AddChild(node, stay: true);
             return this;
         }
 
@@ -274,7 +274,7 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder Success(string name = "Success")
         {
             var node = new SuccessNode { name = name };
-            AddChild(node);
+            AddChild(node, stay: true);
             return this;
         }
 
@@ -284,7 +284,7 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder Failure(string name = "Failure")
         {
             var node = new FailureNode { name = name };
-            AddChild(node);
+            AddChild(node, stay: true);
             return this;
         }
 
@@ -294,7 +294,7 @@ namespace Dynamis.Scripts.Behaviours
         public BehaviourTreeBuilder RandomResult(string name = "RandomResult", float successProbability = 0.5f)
         {
             var node = new RandomResultNode(successProbability) { name = name };
-            AddChild(node);
+            AddChild(node, stay: true);
             return this;
         }
 
@@ -335,17 +335,22 @@ namespace Dynamis.Scripts.Behaviours
             return BehaviourTree.CreateTree(gameObject, _rootNode);
         }
 
-        private void AddChild(BehaviourNode child)
+        private void AddChild(BehaviourNode child, bool stay = false)
         {
-            if (_currentNode != null)
-            {
-                _currentNode.AddChild(child);
-                _currentNode = child;
-            }
-            else
+            if (_currentNode == null)
             {
                 Debug.LogError("Cannot add child: current node is null. Use Root() first.");
+                return;
             }
+            
+            _currentNode.AddChild(child);
+
+            if (stay)
+            {
+                return;
+            }
+            
+            _currentNode = child;
         }
     }
 }
