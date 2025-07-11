@@ -191,7 +191,7 @@ namespace Dynamis.Scripts.Behaviours
         /// 添加距离条件装饰器（从黑板获取目标）
         /// </summary>
         public BehaviourTreeBuilder DistanceCondition(string name, string targetKey, float distance, 
-            DistanceConditionNode.CompareType compareType = DistanceConditionNode.CompareType.Less)
+            DistanceConditionNode.CompareType compareType)
         {
             var node = new DistanceConditionNode(targetKey, distance, compareType) { name = name };
             AddChild(node);
@@ -303,7 +303,7 @@ namespace Dynamis.Scripts.Behaviours
         /// </summary>
         public BehaviourTreeBuilder Back()
         {
-            if (_currentNode != null && _currentNode.parent != null)
+            if (_currentNode is { parent: not null })
             {
                 _currentNode = _currentNode.parent;
             }
