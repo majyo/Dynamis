@@ -32,9 +32,9 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class BlackboardConditionNode : ConditionNode
     {
-        private string key;
-        private object expectedValue;
-        private CompareType compareType;
+        private readonly string _key;
+        private readonly object _expectedValue;
+        private readonly CompareType _compareType;
 
         public enum CompareType
         {
@@ -50,35 +50,35 @@ namespace Dynamis.Scripts.Behaviours
 
         public BlackboardConditionNode(string key, object expectedValue = null, CompareType compareType = CompareType.Exists)
         {
-            this.key = key;
-            this.expectedValue = expectedValue;
-            this.compareType = compareType;
+            this._key = key;
+            this._expectedValue = expectedValue;
+            this._compareType = compareType;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new BlackboardConditionNode(key, expectedValue, compareType);
+            return new BlackboardConditionNode(_key, _expectedValue, _compareType);
         }
 
         protected override bool EvaluateCondition()
         {
-            if (blackboard == null || string.IsNullOrEmpty(key))
+            if (blackboard == null || string.IsNullOrEmpty(_key))
                 return false;
 
-            switch (compareType)
+            switch (_compareType)
             {
                 case CompareType.Exists:
-                    return blackboard.HasKey(key);
+                    return blackboard.HasKey(_key);
                 
                 case CompareType.NotExists:
-                    return !blackboard.HasKey(key);
+                    return !blackboard.HasKey(_key);
                 
                 default:
-                    if (!blackboard.HasKey(key))
+                    if (!blackboard.HasKey(_key))
                         return false;
                     
-                    var value = blackboard.GetValue<object>(key);
-                    return CompareValues(value, expectedValue);
+                    var value = blackboard.GetValue<object>(_key);
+                    return CompareValues(value, _expectedValue);
             }
         }
 
@@ -104,7 +104,7 @@ namespace Dynamis.Scripts.Behaviours
 
         private bool CompareFloat(float actual, float expected)
         {
-            switch (compareType)
+            switch (_compareType)
             {
                 case CompareType.Equals: return Mathf.Approximately(actual, expected);
                 case CompareType.NotEquals: return !Mathf.Approximately(actual, expected);
@@ -118,7 +118,7 @@ namespace Dynamis.Scripts.Behaviours
 
         private bool CompareInt(int actual, int expected)
         {
-            switch (compareType)
+            switch (_compareType)
             {
                 case CompareType.Equals: return actual == expected;
                 case CompareType.NotEquals: return actual != expected;
@@ -132,7 +132,7 @@ namespace Dynamis.Scripts.Behaviours
 
         private bool CompareBool(bool actual, bool expected)
         {
-            switch (compareType)
+            switch (_compareType)
             {
                 case CompareType.Equals: return actual == expected;
                 case CompareType.NotEquals: return actual != expected;
@@ -142,7 +142,7 @@ namespace Dynamis.Scripts.Behaviours
 
         private bool CompareObject(object actual, object expected)
         {
-            switch (compareType)
+            switch (_compareType)
             {
                 case CompareType.Equals: return Equals(actual, expected);
                 case CompareType.NotEquals: return !Equals(actual, expected);
@@ -156,10 +156,10 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class DistanceConditionNode : ConditionNode
     {
-        private Transform target;
-        private string targetKey;
-        private float distance;
-        private CompareType compareType;
+        private readonly Transform _target;
+        private readonly string _targetKey;
+        private readonly float _distance;
+        private readonly CompareType _compareType;
 
         public enum CompareType
         {
@@ -172,24 +172,24 @@ namespace Dynamis.Scripts.Behaviours
 
         public DistanceConditionNode(Transform target, float distance, CompareType compareType = CompareType.Less)
         {
-            this.target = target;
-            this.distance = distance;
-            this.compareType = compareType;
+            this._target = target;
+            this._distance = distance;
+            this._compareType = compareType;
         }
 
         public DistanceConditionNode(string targetKey, float distance, CompareType compareType = CompareType.Less)
         {
-            this.targetKey = targetKey;
-            this.distance = distance;
-            this.compareType = compareType;
+            this._targetKey = targetKey;
+            this._distance = distance;
+            this._compareType = compareType;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            if (target != null)
-                return new DistanceConditionNode(target, distance, compareType);
+            if (_target != null)
+                return new DistanceConditionNode(_target, _distance, _compareType);
             else
-                return new DistanceConditionNode(targetKey, distance, compareType);
+                return new DistanceConditionNode(_targetKey, _distance, _compareType);
         }
 
         protected override bool EvaluateCondition()
@@ -197,15 +197,15 @@ namespace Dynamis.Scripts.Behaviours
             if (transform == null)
                 return false;
 
-            Transform targetTransform = target;
+            Transform targetTransform = _target;
             
             // 如果没有直接设置目标，尝试从黑板获取
-            if (targetTransform == null && !string.IsNullOrEmpty(targetKey) && blackboard != null)
+            if (targetTransform == null && !string.IsNullOrEmpty(_targetKey) && blackboard != null)
             {
-                targetTransform = blackboard.GetValue<Transform>(targetKey);
+                targetTransform = blackboard.GetValue<Transform>(_targetKey);
                 if (targetTransform == null)
                 {
-                    var targetGameObject = blackboard.GetValue<GameObject>(targetKey);
+                    var targetGameObject = blackboard.GetValue<GameObject>(_targetKey);
                     if (targetGameObject != null)
                         targetTransform = targetGameObject.transform;
                 }
@@ -216,18 +216,18 @@ namespace Dynamis.Scripts.Behaviours
 
             float currentDistance = Vector3.Distance(transform.position, targetTransform.position);
             
-            switch (compareType)
+            switch (_compareType)
             {
                 case CompareType.Less:
-                    return currentDistance < distance;
+                    return currentDistance < _distance;
                 case CompareType.LessOrEqual:
-                    return currentDistance <= distance;
+                    return currentDistance <= _distance;
                 case CompareType.Greater:
-                    return currentDistance > distance;
+                    return currentDistance > _distance;
                 case CompareType.GreaterOrEqual:
-                    return currentDistance >= distance;
+                    return currentDistance >= _distance;
                 case CompareType.Equals:
-                    return Mathf.Approximately(currentDistance, distance);
+                    return Mathf.Approximately(currentDistance, _distance);
                 default:
                     return false;
             }
@@ -239,47 +239,47 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class TimeConditionNode : ConditionNode
     {
-        private float targetTime;
-        private string timeKey;
-        private float startTime;
+        private readonly float _targetTime;
+        private readonly string _timeKey;
+        private float _startTime;
 
         public TimeConditionNode(float targetTime)
         {
-            this.targetTime = targetTime;
+            this._targetTime = targetTime;
         }
 
         public TimeConditionNode(string timeKey, float targetTime)
         {
-            this.timeKey = timeKey;
-            this.targetTime = targetTime;
+            this._timeKey = timeKey;
+            this._targetTime = targetTime;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            if (!string.IsNullOrEmpty(timeKey))
-                return new TimeConditionNode(timeKey, targetTime);
+            if (!string.IsNullOrEmpty(_timeKey))
+                return new TimeConditionNode(_timeKey, _targetTime);
             else
-                return new TimeConditionNode(targetTime);
+                return new TimeConditionNode(_targetTime);
         }
 
         protected override void OnStart()
         {
             base.OnStart();
             
-            if (!string.IsNullOrEmpty(timeKey) && blackboard != null)
+            if (!string.IsNullOrEmpty(_timeKey) && blackboard != null)
             {
-                startTime = blackboard.GetValue("startTime", Time.time);
+                _startTime = blackboard.GetValue("startTime", Time.time);
             }
             else
             {
-                startTime = Time.time;
+                _startTime = Time.time;
             }
         }
 
         protected override bool EvaluateCondition()
         {
-            float elapsedTime = Time.time - startTime;
-            return elapsedTime >= targetTime;
+            float elapsedTime = Time.time - _startTime;
+            return elapsedTime >= _targetTime;
         }
     }
 
@@ -288,35 +288,35 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class RandomConditionNode : ConditionNode
     {
-        private float successProbability;
-        private bool hasEvaluated = false;
-        private bool lastResult = false;
+        private readonly float _successProbability;
+        private bool _hasEvaluated;
+        private bool _lastResult;
 
         public RandomConditionNode(float successProbability = 0.5f)
         {
-            this.successProbability = Mathf.Clamp01(successProbability);
+            this._successProbability = Mathf.Clamp01(successProbability);
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new RandomConditionNode(successProbability);
+            return new RandomConditionNode(_successProbability);
         }
 
         protected override void OnStart()
         {
             base.OnStart();
-            hasEvaluated = false;
+            _hasEvaluated = false;
         }
 
         protected override bool EvaluateCondition()
         {
             // 每次开始时只评估一次，避免随机结果变化
-            if (!hasEvaluated)
+            if (!_hasEvaluated)
             {
-                lastResult = Random.Range(0f, 1f) <= successProbability;
-                hasEvaluated = true;
+                _lastResult = Random.Range(0f, 1f) <= _successProbability;
+                _hasEvaluated = true;
             }
-            return lastResult;
+            return _lastResult;
         }
     }
 
@@ -325,22 +325,22 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class CooldownConditionNode : ConditionNode
     {
-        private float cooldownTime;
-        private float lastExecutionTime = -1;
+        private readonly float _cooldownTime;
+        private float _lastExecutionTime = -1;
 
         public CooldownConditionNode(float cooldownTime = 1.0f)
         {
-            this.cooldownTime = cooldownTime;
+            this._cooldownTime = cooldownTime;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new CooldownConditionNode(cooldownTime);
+            return new CooldownConditionNode(_cooldownTime);
         }
 
         protected override bool EvaluateCondition()
         {
-            if (lastExecutionTime > 0 && Time.time - lastExecutionTime < cooldownTime)
+            if (_lastExecutionTime > 0 && Time.time - _lastExecutionTime < _cooldownTime)
             {
                 return false;
             }
@@ -357,7 +357,7 @@ namespace Dynamis.Scripts.Behaviours
             // 记录执行时间
             if (result == NodeState.Success || result == NodeState.Failure)
             {
-                lastExecutionTime = Time.time;
+                _lastExecutionTime = Time.time;
             }
             
             return result;
@@ -369,21 +369,21 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class CustomConditionNode : ConditionNode
     {
-        private System.Func<bool> conditionFunc;
+        private readonly System.Func<bool> _conditionFunc;
 
         public CustomConditionNode(System.Func<bool> conditionFunc)
         {
-            this.conditionFunc = conditionFunc;
+            this._conditionFunc = conditionFunc;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new CustomConditionNode(conditionFunc);
+            return new CustomConditionNode(_conditionFunc);
         }
 
         protected override bool EvaluateCondition()
         {
-            return conditionFunc?.Invoke() ?? false;
+            return _conditionFunc?.Invoke() ?? false;
         }
     }
 }

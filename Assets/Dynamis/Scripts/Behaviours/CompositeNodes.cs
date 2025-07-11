@@ -7,7 +7,7 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public abstract class CompositeNode : BehaviourNode
     {
-        protected int currentChild = 0;
+        protected int currentChild;
 
         protected override void OnStart()
         {
@@ -80,18 +80,18 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class ParallelNode : CompositeNode
     {
-        private bool failOnAny;
-        private bool succeedOnAll;
+        private readonly bool _failOnAny;
+        private readonly bool _succeedOnAll;
 
         public ParallelNode(bool failOnAny = false, bool succeedOnAll = true)
         {
-            this.failOnAny = failOnAny;
-            this.succeedOnAll = succeedOnAll;
+            this._failOnAny = failOnAny;
+            this._succeedOnAll = succeedOnAll;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new ParallelNode(failOnAny, succeedOnAll);
+            return new ParallelNode(_failOnAny, _succeedOnAll);
         }
 
         protected override NodeState OnUpdate()
@@ -112,7 +112,7 @@ namespace Dynamis.Scripts.Behaviours
                         break;
                     case NodeState.Failure:
                         failureCount++;
-                        if (failOnAny)
+                        if (_failOnAny)
                             return NodeState.Failure;
                         break;
                     case NodeState.Running:
@@ -121,10 +121,10 @@ namespace Dynamis.Scripts.Behaviours
                 }
             }
 
-            if (succeedOnAll && successCount == children.Count)
+            if (_succeedOnAll && successCount == children.Count)
                 return NodeState.Success;
 
-            if (!succeedOnAll && successCount > 0)
+            if (!_succeedOnAll && successCount > 0)
                 return NodeState.Success;
 
             if (stillRunning)
@@ -139,11 +139,11 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class RandomSelectorNode : CompositeNode
     {
-        private int selectedChild = -1;
+        private int _selectedChild = -1;
 
         protected override void OnStart()
         {
-            selectedChild = Random.Range(0, children.Count);
+            _selectedChild = Random.Range(0, children.Count);
         }
 
         protected override NodeState OnUpdate()
@@ -151,9 +151,9 @@ namespace Dynamis.Scripts.Behaviours
             if (children.Count == 0)
                 return NodeState.Failure;
 
-            if (selectedChild >= 0 && selectedChild < children.Count)
+            if (_selectedChild >= 0 && _selectedChild < children.Count)
             {
-                return children[selectedChild].Update();
+                return children[_selectedChild].Update();
             }
 
             return NodeState.Failure;
@@ -165,29 +165,29 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class WeightedRandomSelectorNode : CompositeNode
     {
-        private float[] weights;
-        private int selectedChild = -1;
+        private readonly float[] _weights;
+        private int _selectedChild = -1;
 
         public WeightedRandomSelectorNode(params float[] weights)
         {
-            this.weights = weights?.Clone() as float[];
+            this._weights = weights?.Clone() as float[];
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new WeightedRandomSelectorNode(weights);
+            return new WeightedRandomSelectorNode(_weights);
         }
 
         protected override void OnStart()
         {
-            if (weights == null || weights.Length != children.Count)
+            if (_weights == null || _weights.Length != children.Count)
             {
-                selectedChild = Random.Range(0, children.Count);
+                _selectedChild = Random.Range(0, children.Count);
                 return;
             }
 
             float totalWeight = 0;
-            foreach (float weight in weights)
+            foreach (float weight in _weights)
             {
                 totalWeight += weight;
             }
@@ -195,12 +195,12 @@ namespace Dynamis.Scripts.Behaviours
             float randomValue = Random.Range(0, totalWeight);
             float currentWeight = 0;
 
-            for (int i = 0; i < weights.Length; i++)
+            for (int i = 0; i < _weights.Length; i++)
             {
-                currentWeight += weights[i];
+                currentWeight += _weights[i];
                 if (randomValue <= currentWeight)
                 {
-                    selectedChild = i;
+                    _selectedChild = i;
                     break;
                 }
             }
@@ -211,9 +211,9 @@ namespace Dynamis.Scripts.Behaviours
             if (children.Count == 0)
                 return NodeState.Failure;
 
-            if (selectedChild >= 0 && selectedChild < children.Count)
+            if (_selectedChild >= 0 && _selectedChild < children.Count)
             {
-                return children[selectedChild].Update();
+                return children[_selectedChild].Update();
             }
 
             return NodeState.Failure;

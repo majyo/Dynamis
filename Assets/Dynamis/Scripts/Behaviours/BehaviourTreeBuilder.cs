@@ -39,9 +39,9 @@ namespace Dynamis.Scripts.Behaviours
             return this;
         }
 
-        public BehaviourTreeBuilder Node(BehaviourNode node)
+        public BehaviourTreeBuilder Node(BehaviourNode node, bool stay = false)
         {
-            AddChild(node);
+            AddChild(node, stay);
             return this;
         }
 

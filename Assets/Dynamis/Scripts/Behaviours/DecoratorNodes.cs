@@ -85,17 +85,13 @@ namespace Dynamis.Scripts.Behaviours
             if (child == null)
                 return NodeState.Failure;
 
-            switch (child.Update())
+            return child.Update() switch
             {
-                case NodeState.Running:
-                    return NodeState.Running;
-                case NodeState.Success:
-                    return NodeState.Failure;
-                case NodeState.Failure:
-                    return NodeState.Success;
-            }
-
-            return NodeState.Failure;
+                NodeState.Running => NodeState.Running,
+                NodeState.Success => NodeState.Failure,
+                NodeState.Failure => NodeState.Success,
+                _ => NodeState.Failure
+            };
         }
     }
 
@@ -104,42 +100,44 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class RepeaterNode : DecoratorNode
     {
-        private int repeatCount = -1; // -1 表示无限重复
-        private int currentCount;
+        private readonly int _repeatCount; // -1 表示无限重复
+        private int _currentCount;
 
         public RepeaterNode(int repeatCount = -1)
         {
-            this.repeatCount = repeatCount;
+            this._repeatCount = repeatCount;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new RepeaterNode(repeatCount);
+            return new RepeaterNode(_repeatCount);
         }
 
         protected override void OnStart()
         {
             base.OnStart();
-            currentCount = 0;
+            _currentCount = 0;
         }
 
         protected override NodeState OnUpdate()
         {
             if (child == null)
+            {
                 return NodeState.Failure;
+            }
 
             switch (child.Update())
             {
                 case NodeState.Running:
-                    return NodeState.Running;
+                    break;
                 case NodeState.Success:
                 case NodeState.Failure:
-                    currentCount++;
-                    if (repeatCount > 0 && currentCount >= repeatCount)
+                    _currentCount++;
+                    if (_repeatCount > 0 && _currentCount >= _repeatCount)
                     {
                         return NodeState.Success;
                     }
-                    return NodeState.Running;
+                    break;
             }
 
             return NodeState.Running;
@@ -161,17 +159,15 @@ namespace Dynamis.Scripts.Behaviours
             if (child == null)
                 return NodeState.Failure;
 
-            switch (child.Update())
+            return child.Update() switch
             {
-                case NodeState.Running:
-                    return NodeState.Running;
-                case NodeState.Success:
-                    return NodeState.Running; // 继续重复
-                case NodeState.Failure:
-                    return NodeState.Success; // 失败时成功
-            }
-
-            return NodeState.Running;
+                NodeState.Running => NodeState.Running,
+                NodeState.Success => NodeState.Running // 继续重复
+                ,
+                NodeState.Failure => NodeState.Success // 失败时成功
+                ,
+                _ => NodeState.Running
+            };
         }
     }
 
@@ -190,17 +186,15 @@ namespace Dynamis.Scripts.Behaviours
             if (child == null)
                 return NodeState.Failure;
 
-            switch (child.Update())
+            return child.Update() switch
             {
-                case NodeState.Running:
-                    return NodeState.Running;
-                case NodeState.Success:
-                    return NodeState.Success; // 成功时成功
-                case NodeState.Failure:
-                    return NodeState.Running; // 失败时继续重复
-            }
-
-            return NodeState.Running;
+                NodeState.Running => NodeState.Running,
+                NodeState.Success => NodeState.Success // 成功时成功
+                ,
+                NodeState.Failure => NodeState.Running // 失败时继续重复
+                ,
+                _ => NodeState.Running
+            };
         }
     }
 
@@ -209,23 +203,23 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class TimeoutNode : DecoratorNode
     {
-        private float timeoutDuration = 5.0f;
-        private float startTime;
+        private readonly float _timeoutDuration;
+        private float _startTime;
 
         public TimeoutNode(float timeoutDuration = 5.0f)
         {
-            this.timeoutDuration = timeoutDuration;
+            this._timeoutDuration = timeoutDuration;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new TimeoutNode(timeoutDuration);
+            return new TimeoutNode(_timeoutDuration);
         }
 
         protected override void OnStart()
         {
             base.OnStart();
-            startTime = Time.time;
+            _startTime = Time.time;
         }
 
         protected override NodeState OnUpdate()
@@ -233,7 +227,7 @@ namespace Dynamis.Scripts.Behaviours
             if (child == null)
                 return NodeState.Failure;
 
-            if (Time.time - startTime > timeoutDuration)
+            if (Time.time - _startTime > _timeoutDuration)
             {
                 child.Abort();
                 return NodeState.Failure;
@@ -248,17 +242,17 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class CooldownNode : DecoratorNode
     {
-        private float cooldownTime = 1.0f;
-        private float lastExecutionTime = -1;
+        private readonly float _cooldownTime;
+        private float _lastExecutionTime = -1;
 
         public CooldownNode(float cooldownTime = 1.0f)
         {
-            this.cooldownTime = cooldownTime;
+            this._cooldownTime = cooldownTime;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new CooldownNode(cooldownTime);
+            return new CooldownNode(_cooldownTime);
         }
 
         protected override NodeState OnUpdate()
@@ -266,7 +260,7 @@ namespace Dynamis.Scripts.Behaviours
             if (child == null)
                 return NodeState.Failure;
 
-            if (lastExecutionTime > 0 && Time.time - lastExecutionTime < cooldownTime)
+            if (_lastExecutionTime > 0 && Time.time - _lastExecutionTime < _cooldownTime)
             {
                 return NodeState.Failure;
             }
@@ -274,7 +268,7 @@ namespace Dynamis.Scripts.Behaviours
             var result = child.Update();
             if (result == NodeState.Success || result == NodeState.Failure)
             {
-                lastExecutionTime = Time.time;
+                _lastExecutionTime = Time.time;
             }
 
             return result;
@@ -286,24 +280,24 @@ namespace Dynamis.Scripts.Behaviours
     /// </summary>
     public class ConditionalNode : DecoratorNode
     {
-        private System.Func<bool> condition;
+        private readonly System.Func<bool> _condition;
 
         public ConditionalNode(System.Func<bool> condition)
         {
-            this.condition = condition;
+            this._condition = condition;
         }
 
         protected override BehaviourNode CreateClone()
         {
-            return new ConditionalNode(condition);
+            return new ConditionalNode(_condition);
         }
 
         protected override NodeState OnUpdate()
         {
-            if (child == null || condition == null)
+            if (child == null || _condition == null)
                 return NodeState.Failure;
 
-            if (!condition.Invoke())
+            if (!_condition.Invoke())
                 return NodeState.Failure;
 
             return child.Update();
