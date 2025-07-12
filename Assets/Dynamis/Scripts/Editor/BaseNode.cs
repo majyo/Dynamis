@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-namespace Dynamis.Editor
+namespace Dynamis.Scripts.Editor
 {
     [Serializable]
     public class BaseNode : Node

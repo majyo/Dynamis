@@ -4,7 +4,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Dynamis.Editor
+namespace Dynamis.Scripts.Editor
 {
     public class GraphWindow : EditorWindow
     {

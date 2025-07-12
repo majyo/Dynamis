@@ -2,7 +2,7 @@
 using System.Linq;
 using UnityEngine;
 
-namespace Dynamis.Editor
+namespace Dynamis.Scripts.Editor
 {
     public class GraphExecutor
     {
