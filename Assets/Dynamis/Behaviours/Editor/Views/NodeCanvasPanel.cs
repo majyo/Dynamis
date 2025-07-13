@@ -243,7 +243,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 var connection1 = new NodeConnection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
                 {
                     ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
-                    LineWidth = 3f
+                    LineWidth = 2f
                 };
                 AddConnection(connection1);
                 
@@ -251,7 +251,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 var connection2 = new NodeConnection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
                 {
                     ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
-                    LineWidth = 3f
+                    LineWidth = 2f
                 };
                 AddConnection(connection2);
                 

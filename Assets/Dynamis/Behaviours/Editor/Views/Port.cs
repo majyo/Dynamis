@@ -33,16 +33,20 @@ namespace Dynamis.Behaviours.Editor.Views
             style.height = 16;
             style.position = Position.Absolute;
             
-            // 根据类型设置位置
+            // 根据类型设置位置 - 上下排布
             if (Type == PortType.Input)
             {
-                style.left = -8; // 输入端口在节点左侧
-                style.top = 8;
+                // 输入端口在节点顶部中央
+                style.left = Length.Percent(50); // 水平居中
+                style.marginLeft = -8; // 向左偏移自身宽度的一半以实现真正居中
+                style.top = -8; // 输入端口在节点顶部
             }
             else
             {
-                style.right = -8; // 输出端口在节点右侧
-                style.top = 8;
+                // 输出端口在节点底部中央
+                style.left = Length.Percent(50); // 水平居中
+                style.marginLeft = -8; // 向左偏移自身宽度的一半以实现真正居中
+                style.bottom = -8; // 输出端口在节点底部
             }
             
             // 创建端口圆形
@@ -93,12 +97,12 @@ namespace Dynamis.Behaviours.Editor.Views
                 if (Type == PortType.Input)
                 {
                     // WorldPosition = new Vector2(ParentNode.CanvasPosition.x, ParentNode.CanvasPosition.y + 20);
-                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y);
+                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y - 8);
                 }
                 else
                 {
                     // WorldPosition = new Vector2(ParentNode.CanvasPosition.x + 180, ParentNode.CanvasPosition.y + 20);
-                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y + ParentNode.CanvasSize.y);
+                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y + ParentNode.CanvasSize.y + 8);
                 }
             }
         }
