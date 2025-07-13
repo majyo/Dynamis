@@ -7,6 +7,9 @@ namespace Dynamis.Behaviours.Editor
     {
         public static BehaviourEditorWindow Instance { get; private set; }
         
+        private Views.BehaviourEditorToolbar toolbar;
+        private Views.TwoColumnLayout twoColumnLayout;
+        
         [MenuItem("Window/Dynamis/Behaviour Editor")]
         public static void ShowWindow()
         {
@@ -19,7 +22,12 @@ namespace Dynamis.Behaviours.Editor
             var root = rootVisualElement;
             root.style.flexGrow = 1;
             
-            var twoColumnLayout = new Views.TwoColumnLayout
+            // 首先添加工具栏作为第一个元素
+            toolbar = new Views.BehaviourEditorToolbar();
+            root.Add(toolbar);
+            
+            // 然后添加两列布局
+            twoColumnLayout = new Views.TwoColumnLayout
             {
                 style =
                 {
@@ -27,6 +35,19 @@ namespace Dynamis.Behaviours.Editor
                 }
             };
             root.Add(twoColumnLayout);
+            
+            // 添加节点画布面板到右侧面板
+            SetupNodeCanvas();
+        }
+        
+        private void SetupNodeCanvas()
+        {
+            var rightContent = twoColumnLayout.RightContent;
+            if (rightContent != null)
+            {
+                var nodeCanvas = new Views.NodeCanvasPanel();
+                rightContent.Add(nodeCanvas);
+            }
         }
     }
 }

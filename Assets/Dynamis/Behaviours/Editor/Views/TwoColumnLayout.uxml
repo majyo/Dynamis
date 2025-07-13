@@ -9,12 +9,8 @@
             </ui:ScrollView>
         </ui:VisualElement>
         <ui:VisualElement name="right-panel" class="right-panel">
-            <ui:ScrollView name="right-content" class="panel-content">
-                <ui:Label text="这里是右侧面板内容，占用更大的空间" />
-                <ui:TextField label="示例输入框" value="默认值" />
-                <ui:Slider label="示例滑块" value="50" high-value="100" low-value="0" />
-                <uie:ObjectField label="示例对象字段" type="UnityEngine.GameObject, UnityEngine" />
-            </ui:ScrollView>
+            <ui:VisualElement name="right-content" class="panel-content">
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>
