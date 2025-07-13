@@ -92,11 +92,13 @@ namespace Dynamis.Behaviours.Editor.Views
                 // 根据端口类型调整位置
                 if (Type == PortType.Input)
                 {
-                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x, ParentNode.CanvasPosition.y + 20);
+                    // WorldPosition = new Vector2(ParentNode.CanvasPosition.x, ParentNode.CanvasPosition.y + 20);
+                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y);
                 }
                 else
                 {
-                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + 180, ParentNode.CanvasPosition.y + 20);
+                    // WorldPosition = new Vector2(ParentNode.CanvasPosition.x + 180, ParentNode.CanvasPosition.y + 20);
+                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y + ParentNode.CanvasSize.y);
                 }
             }
         }

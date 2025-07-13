@@ -34,7 +34,9 @@ namespace Dynamis.Behaviours.Editor.Views
                 style.top = value.y;
             }
         }
-        
+
+        public Vector2 CanvasSize => new(style.width.value.value, style.height.value.value);
+
         public BehaviourNode(string nodeName = "Node", string description = "Node Description", bool hasInput = true, bool hasOutput = true)
         {
             NodeName = nodeName;
@@ -157,6 +159,8 @@ namespace Dynamis.Behaviours.Editor.Views
                 this.CaptureMouse();
                 evt.StopPropagation();
             }
+            
+            Debug.Log(CanvasSize);
         }
         
         private void OnMouseMove(MouseMoveEvent evt)

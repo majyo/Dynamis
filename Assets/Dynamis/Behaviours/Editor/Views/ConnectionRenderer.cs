@@ -6,7 +6,7 @@ namespace Dynamis.Behaviours.Editor.Views
 {
     public class ConnectionRenderer : VisualElement
     {
-        private List<NodeConnection> _connections = new List<NodeConnection>();
+        private readonly List<NodeConnection> _connections = new();
         
         public ConnectionRenderer()
         {
@@ -62,7 +62,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
         
-        private void DrawConnection(Painter2D painter, NodeConnection connection)
+        private static void DrawConnection(Painter2D painter, NodeConnection connection)
         {
             // 获取贝塞尔曲线的关键点
             connection.GetBezierPoints(out Vector2 startPoint, out Vector2 endPoint, 
@@ -88,7 +88,7 @@ namespace Dynamis.Behaviours.Editor.Views
             DrawArrow(painter, endTangent, endPoint, connection.ConnectionColor, connection.LineWidth);
         }
         
-        private void DrawArrow(Painter2D painter, Vector2 tangentPoint, Vector2 endPoint, Color color, float lineWidth)
+        private static void DrawArrow(Painter2D painter, Vector2 tangentPoint, Vector2 endPoint, Color color, float lineWidth)
         {
             // 计算箭头方向
             Vector2 direction = (endPoint - tangentPoint).normalized;
