@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Dynamis/Behaviours/Editor/TwoColumnLayout.uss?fileID=7433441132597879392&amp;guid=b55102896c50e6e47a6002b638d6215f&amp;type=3#TwoColumnLayout" />
+    <ui:VisualElement name="two-column-container" class="two-column-container">
+        <ui:VisualElement name="left-panel" class="left-panel">
+            <ui:ScrollView name="left-content" class="panel-content">
+                <ui:Label text="这里是左侧面板内容" />
+                <ui:Button text="示例按钮" />
+                <ui:Toggle label="示例开关" />
+            </ui:ScrollView>
+        </ui:VisualElement>
+        <ui:VisualElement name="right-panel" class="right-panel">
+            <ui:ScrollView name="right-content" class="panel-content">
+                <ui:Label text="这里是右侧面板内容，占用更大的空间" />
+                <ui:TextField label="示例输入框" value="默认值" />
+                <ui:Slider label="示例滑块" value="50" high-value="100" low-value="0" />
+                <uie:ObjectField label="示例对象字段" type="UnityEngine.GameObject, UnityEngine" />
+            </ui:ScrollView>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

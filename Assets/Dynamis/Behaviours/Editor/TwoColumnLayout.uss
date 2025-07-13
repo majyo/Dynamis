@@ -1,0 +1,56 @@
+.two-column-container {
+    flex-direction: row;
+    flex-grow: 1;
+    height: 100%;
+}
+
+.left-panel {
+    flex-basis: 25%;
+    min-width: 200px;
+    background-color: rgba(56, 56, 56, 0.1);
+}
+
+.right-panel {
+    flex-basis: 75%;
+    flex-grow: 1;
+    background-color: rgba(42, 42, 42, 0.1);
+}
+
+.panel-header {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(210, 210, 210);
+    padding: 8px;
+    background-color: rgba(32, 32, 32, 0.8);
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 0, 0, 0.3);
+    -unity-text-align: middle-center;
+}
+
+.panel-content {
+    flex-grow: 1;
+    padding: 10px;
+}
+
+.panel-content > * {
+    margin-bottom: 5px;
+}
+
+.splitter {
+    width: 4px;
+    background-color: rgba(0, 0, 0, 0.3);
+    cursor: resize-horizontal;
+    flex-shrink: 0;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.1);
+    border-right-color: rgba(0, 0, 0, 0.5);
+}
+
+.splitter:hover {
+    background-color: rgba(100, 150, 255, 0.5);
+}
+
+.splitter:active {
+    background-color: rgba(100, 150, 255, 0.8);
+}
