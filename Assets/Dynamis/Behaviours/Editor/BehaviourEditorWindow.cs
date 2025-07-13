@@ -1,5 +1,5 @@
 ﻿using UnityEditor;
-using UnityEngine.UIElements;
+using UnityEngine;
 
 namespace Dynamis.Behaviours.Editor
 {
@@ -11,12 +11,22 @@ namespace Dynamis.Behaviours.Editor
         public static void ShowWindow()
         {
             Instance = GetWindow<BehaviourEditorWindow>("Behaviour Editor");
+            Instance.titleContent = new GUIContent("Behaviour Editor");
         }
 
         private void CreateGUI()
         {
-            var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>("Assets/Dynamis/Behaviours/Editor/TwoColumnLayout.uxml");
-            visualTree.CloneTree(rootVisualElement);
+            var root = rootVisualElement;
+            root.style.flexGrow = 1;
+            
+            var twoColumnLayout = new TwoColumnLayout
+            {
+                style =
+                {
+                    flexGrow = 1
+                }
+            };
+            root.Add(twoColumnLayout);
         }
     }
 }
