@@ -170,16 +170,26 @@ namespace Dynamis.Behaviours.Editor.Views
         private BehaviourNode GetNodeAtPosition(Vector2 mousePosition)
         {
             // 转换鼠标位置到内容容器的本地坐标
-            Vector2 localPosition = mousePosition - _canvasOffset;
-            
-            // 遍历所有子元素，找到包含该点的节点
-            foreach (var child in _contentContainer.Children())
+            var localPosition = mousePosition - _canvasOffset;
+
+            // 逆序遍历所有子元素，找到包含该点的节点
+            for (var i = _contentContainer.childCount - 1; i >= 0; i--)
             {
+                var child = _contentContainer[i];
+                
                 if (child is BehaviourNode node && node.ContainsPoint(localPosition))
                 {
                     return node;
                 }
             }
+            
+            // foreach (var child in _contentContainer.Children())
+            // {
+            //     if (child is BehaviourNode node && node.ContainsPoint(localPosition))
+            //     {
+            //         return node;
+            //     }
+            // }
             
             return null;
         }

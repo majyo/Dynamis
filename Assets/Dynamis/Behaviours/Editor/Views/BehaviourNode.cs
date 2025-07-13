@@ -194,6 +194,8 @@ namespace Dynamis.Behaviours.Editor.Views
             _isDragging = true;
             _startMousePosition = mousePosition;
             _startNodePosition = CanvasPosition;
+            
+            BringToFront();
         }
         
         // 执行拖拽移动 - 供外部调用
