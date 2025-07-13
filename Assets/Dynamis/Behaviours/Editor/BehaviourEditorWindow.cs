@@ -19,7 +19,7 @@ namespace Dynamis.Behaviours.Editor
             var root = rootVisualElement;
             root.style.flexGrow = 1;
             
-            var twoColumnLayout = new TwoColumnLayout
+            var twoColumnLayout = new Views.TwoColumnLayout
             {
                 style =
                 {

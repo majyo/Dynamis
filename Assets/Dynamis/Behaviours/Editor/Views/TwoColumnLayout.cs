@@ -1,13 +1,13 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEditor;
 
-namespace Dynamis.Behaviours.Editor
+namespace Dynamis.Behaviours.Editor.Views
 {
     [UxmlElement]
     public partial class TwoColumnLayout : VisualElement
     {
-        private const string UxmlPath = "Assets/Dynamis/Behaviours/Editor/TwoColumnLayout.uxml";
+        private const string UxmlPath = "Assets/Dynamis/Behaviours/Editor/Views/TwoColumnLayout.uxml";
         private const float MinPanelWidth = 200f;
         private const float SplitterWidth = 4f;
         
