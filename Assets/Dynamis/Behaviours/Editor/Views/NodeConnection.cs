@@ -4,10 +4,17 @@ namespace Dynamis.Behaviours.Editor.Views
 {
     public class NodeConnection
     {
+        public enum DirectionType
+        {
+            Horizontal,
+            Vertical,
+        }
+        
         public Port OutputPort { get; private set; }
         public Port InputPort { get; private set; }
         public Color ConnectionColor { get; set; } = Color.white;
         public float LineWidth { get; set; } = 2f;
+        public DirectionType Direction { get; set; } = DirectionType.Vertical;
         
         public NodeConnection(Port outputPort, Port inputPort)
         {
@@ -23,22 +30,6 @@ namespace Dynamis.Behaviours.Editor.Views
         public Vector2 GetEndPoint()
         {
             return InputPort.GetConnectionPoint();
-        }
-        
-        // 计算贝塞尔曲线的控制点
-        public void GetBezierPoints(out Vector2 startPoint, out Vector2 endPoint, 
-                                   out Vector2 startTangent, out Vector2 endTangent)
-        {
-            startPoint = GetStartPoint();
-            endPoint = GetEndPoint();
-            
-            // 计算贝塞尔曲线的切线长度，基于连接距离
-            float distance = Vector2.Distance(startPoint, endPoint);
-            float tangentLength = Mathf.Max(40f, distance * 0.3f);
-            
-            // 计算切线点
-            startTangent = startPoint + Vector2.up * tangentLength;
-            endTangent = endPoint + Vector2.down * tangentLength;
         }
     }
 }

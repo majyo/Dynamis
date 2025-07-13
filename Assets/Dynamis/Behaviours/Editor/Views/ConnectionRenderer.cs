@@ -64,13 +64,33 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private static void DrawConnection(Painter2D painter, NodeConnection connection)
         {
-            // 获取贝塞尔曲线的关键点
-            connection.GetBezierPoints(out var startPoint, out var endPoint, 
-                                     out var startTangent, out var endTangent);
+            var startPoint = connection.GetStartPoint();
+            var endPoint = connection.GetEndPoint();
             
+            var arrowDirection = Vector2.up;
+            var arrowSize = Mathf.Max(8f, connection.LineWidth * 2f);
+            
+            DrawArrow(painter, arrowDirection, endPoint, arrowSize, connection.ConnectionColor, connection.LineWidth);
+
+            endPoint.y -= arrowSize;
+            
+            // 计算贝塞尔曲线的切线长度，基于连接距离
+            var distance = Vector2.Distance(startPoint, endPoint);
+            var tangentLength = Mathf.Max(30f, distance * 0.3f);
+            
+            // 计算切线点
+            var startTangent = startPoint + Vector2.up * tangentLength;
+            var endTangent = endPoint + Vector2.down * tangentLength;
+            
+            DrawBezierCurve(painter, startPoint, endPoint, startTangent, endTangent, connection.ConnectionColor, connection.LineWidth);
+        }
+        
+        private static void DrawBezierCurve(Painter2D painter, Vector2 startPoint, Vector2 endPoint, 
+            Vector2 startTangent, Vector2 endTangent, Color color, float lineWidth)
+        {
             // 设置绘制样式
-            painter.strokeColor = connection.ConnectionColor;
-            painter.lineWidth = connection.LineWidth;
+            painter.strokeColor = color;
+            painter.lineWidth = lineWidth;
             painter.lineCap = LineCap.Round;
             painter.lineJoin = LineJoin.Round;
             
@@ -83,19 +103,12 @@ namespace Dynamis.Behaviours.Editor.Views
             
             // 执行描边
             painter.Stroke();
-            
-            // 绘制箭头
-            DrawArrow(painter, endTangent, endPoint, connection.ConnectionColor, connection.LineWidth);
         }
         
-        private static void DrawArrow(Painter2D painter, Vector2 tangentPoint, Vector2 endPoint, Color color, float lineWidth)
+        private static void DrawArrow(Painter2D painter, Vector2 direction, Vector2 endPoint, float arrowSize, Color color, float lineWidth)
         {
             // 计算箭头方向
-            Vector2 direction = (endPoint - tangentPoint).normalized;
             Vector2 perpendicular = new Vector2(-direction.y, direction.x);
-            
-            // 箭头大小
-            float arrowSize = Mathf.Max(8f, lineWidth * 2f);
             
             // 计算箭头的三个点
             Vector2 arrowTip = endPoint;
