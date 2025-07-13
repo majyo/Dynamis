@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-namespace Dynamis.Scripts.Behaviours
+namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
     /// 行为树节点状态
@@ -23,7 +23,7 @@ namespace Dynamis.Scripts.Behaviours
         public readonly List<BehaviourNode> children = new();
         
         protected NodeState state = NodeState.Failure;
-        protected bool started = false;
+        protected bool started;
 
         public NodeState State => state;
 

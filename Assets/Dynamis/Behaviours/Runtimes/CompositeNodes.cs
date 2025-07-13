@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Dynamis.Scripts.Behaviours
+namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
     /// 复合节点基类

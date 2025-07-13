@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using UnityEngine;
 
-namespace Dynamis.Scripts.Behaviours
+namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
     /// 叶子节点基类 - 不能有子节点

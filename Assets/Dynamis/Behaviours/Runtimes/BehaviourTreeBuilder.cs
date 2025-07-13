@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Dynamis.Scripts.Behaviours
+namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
     /// 行为树构建器 - 提供流畅的API来构建行为树

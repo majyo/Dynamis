@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Dynamis.Scripts.Behaviours
+namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
     /// 现代行为树示例 - 使用条件装饰器

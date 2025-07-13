@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Dynamis.Scripts.Behaviours
+namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
     /// 条件装饰器基类 - 根据条件决定是否执行子节点
