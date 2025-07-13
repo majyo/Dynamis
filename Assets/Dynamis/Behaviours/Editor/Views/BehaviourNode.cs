@@ -17,6 +17,10 @@ namespace Dynamis.Behaviours.Editor.Views
         private Port _inputPort;
         private Port _outputPort;
         
+        // 状态相关字段
+        private bool _isHovered;
+        private bool _isSelected;
+        
         // 连线更新回调
         public System.Action onPositionChanged;
         
@@ -25,11 +29,38 @@ namespace Dynamis.Behaviours.Editor.Views
         public Port InputPort => _inputPort;
         public Port OutputPort => _outputPort;
 
-        // 拖拽状态属性，供外部访问
         public bool IsDragging 
         { 
             get => _isDragging; 
             set => _isDragging = value; 
+        }
+
+        // 悬浮状态属性
+        public bool IsHovered 
+        { 
+            get => _isHovered; 
+            set 
+            {
+                if (_isHovered != value)
+                {
+                    _isHovered = value;
+                    UpdateNodeStyles();
+                }
+            }
+        }
+
+        // 选中状态属性
+        public bool IsSelected 
+        { 
+            get => _isSelected; 
+            set 
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    UpdateNodeStyles();
+                }
+            }
         }
 
         public Vector2 StartMousePosition 
@@ -204,6 +235,78 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             _nameLabel.text = NodeName;
             _descriptionLabel.text = Description;
+        }
+
+        private void UpdateNodeStyles()
+        {
+            // 获取头部元素
+            var header = this.Q<VisualElement>("node-header");
+            
+            // 根据四种状态组合设置不同的样式
+            if (_isSelected && _isHovered)
+            {
+                // 选中且悬浮：最亮的样式
+                style.backgroundColor = new Color(0.35f, 0.35f, 0.35f, 1f);
+                style.borderTopColor = new Color(1f, 0.8f, 0.3f, 1f); // 金黄色边框
+                style.borderBottomColor = new Color(1f, 0.8f, 0.3f, 1f);
+                style.borderLeftColor = new Color(1f, 0.8f, 0.3f, 1f);
+                style.borderRightColor = new Color(1f, 0.8f, 0.3f, 1f);
+                style.borderTopWidth = 3;
+                style.borderBottomWidth = 3;
+                style.borderLeftWidth = 3;
+                style.borderRightWidth = 3;
+                
+                if (header != null)
+                    header.style.backgroundColor = new Color(0.8f, 0.6f, 0.2f, 1f); // 金黄色头部
+            }
+            else if (_isSelected)
+            {
+                // 仅选中：橙色主题
+                style.backgroundColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+                style.borderTopColor = new Color(1f, 0.6f, 0.2f, 1f); // 橙色边框
+                style.borderBottomColor = new Color(1f, 0.6f, 0.2f, 1f);
+                style.borderLeftColor = new Color(1f, 0.6f, 0.2f, 1f);
+                style.borderRightColor = new Color(1f, 0.6f, 0.2f, 1f);
+                style.borderTopWidth = 3;
+                style.borderBottomWidth = 3;
+                style.borderLeftWidth = 3;
+                style.borderRightWidth = 3;
+                
+                if (header != null)
+                    header.style.backgroundColor = new Color(0.7f, 0.4f, 0.1f, 1f); // 橙色头部
+            }
+            else if (_isHovered)
+            {
+                // 仅悬浮：浅色主题
+                style.backgroundColor = new Color(0.32f, 0.32f, 0.32f, 1f);
+                style.borderTopColor = new Color(0.6f, 0.6f, 0.6f, 1f); // 浅色边框
+                style.borderBottomColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+                style.borderLeftColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+                style.borderRightColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+                style.borderTopWidth = 2;
+                style.borderBottomWidth = 2;
+                style.borderLeftWidth = 2;
+                style.borderRightWidth = 2;
+                
+                if (header != null)
+                    header.style.backgroundColor = new Color(0.15f, 0.4f, 0.7f, 1f); // 稍亮的蓝色头部
+            }
+            else
+            {
+                // 默认状态：原始样式
+                style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
+                style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+                style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+                style.borderLeftColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+                style.borderRightColor = new Color(0.4f, 0.4f, 0.4f, 1f);
+                style.borderTopWidth = 2;
+                style.borderBottomWidth = 2;
+                style.borderLeftWidth = 2;
+                style.borderRightWidth = 2;
+                
+                if (header != null)
+                    header.style.backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f); // 原始蓝色头部
+            }
         }
     }
 }

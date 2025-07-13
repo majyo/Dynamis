@@ -15,9 +15,13 @@ namespace Dynamis.Behaviours.Editor.Views
         // 节点拖拽相关字段
         private BehaviourNode _draggingNode;
         
+        // 节点状态管理字段
+        private BehaviourNode _hoveredNode;
+        private BehaviourNode _selectedNode;
+        
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
-        private List<NodeConnection> _connections = new List<NodeConnection>();
+        private readonly List<NodeConnection> _connections = new();
         
         public NodeCanvasPanel()
         {
@@ -72,18 +76,26 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnMouseDown(MouseDownEvent evt)
         {
-            // 优先处理节点拖拽（左键）
+            // 优先处理节点拖拽和选择（左键）
             if (evt.button == 0)
             {
                 // 检查是否点击在节点上
                 var clickedNode = GetNodeAtPosition(evt.localMousePosition);
                 if (clickedNode != null)
                 {
+                    // 处理节点选择
+                    SetSelectedNode(clickedNode);
+                    
                     _draggingNode = clickedNode;
                     _draggingNode.StartDragging(evt.mousePosition);
                     this.CaptureMouse();
                     evt.StopPropagation();
                     return;
+                }
+                else
+                {
+                    // 点击空白区域，取消选择
+                    SetSelectedNode(null);
                 }
             }
             
@@ -105,6 +117,13 @@ namespace Dynamis.Behaviours.Editor.Views
                 _draggingNode.UpdateDragging(evt.mousePosition);
                 evt.StopPropagation();
                 return;
+            }
+            
+            // 处理节点悬浮检测（仅在非拖拽状态下）
+            if (!_isCanvasDragging)
+            {
+                var hoveredNode = GetNodeAtPosition(evt.localMousePosition);
+                SetHoveredNode(hoveredNode);
             }
             
             // 处理画布拖拽
@@ -280,6 +299,58 @@ namespace Dynamis.Behaviours.Editor.Views
                 AddConnection(connection5);
                 
             }).ExecuteLater(100); // 延迟100ms执行
+        }
+        
+        // 设置悬浮节点
+        private void SetHoveredNode(BehaviourNode node)
+        {
+            if (_hoveredNode != node)
+            {
+                // 清除之前悬浮节点的状态
+                if (_hoveredNode != null)
+                {
+                    _hoveredNode.IsHovered = false;
+                }
+                
+                // 设置新的悬浮节点
+                _hoveredNode = node;
+                if (_hoveredNode != null)
+                {
+                    _hoveredNode.IsHovered = true;
+                }
+            }
+        }
+        
+        // 设置选中节点
+        private void SetSelectedNode(BehaviourNode node)
+        {
+            if (_selectedNode != node)
+            {
+                // 清除之前选中节点的状态
+                if (_selectedNode != null)
+                {
+                    _selectedNode.IsSelected = false;
+                }
+                
+                // 设置新的选中节点
+                _selectedNode = node;
+                if (_selectedNode != null)
+                {
+                    _selectedNode.IsSelected = true;
+                }
+            }
+        }
+        
+        // 获取当前选中的节点
+        public BehaviourNode GetSelectedNode()
+        {
+            return _selectedNode;
+        }
+        
+        // 获取当前悬浮的节点
+        public BehaviourNode GetHoveredNode()
+        {
+            return _hoveredNode;
         }
     }
 }
