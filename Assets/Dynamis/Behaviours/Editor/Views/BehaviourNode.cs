@@ -13,14 +13,34 @@ namespace Dynamis.Behaviours.Editor.Views
         private Vector2 _startMousePosition;
         private Vector2 _startNodePosition;
         
+        // 端口相关字段
+        private Port _inputPort;
+        private Port _outputPort;
+        
+        // 连线更新回调
+        public System.Action OnPositionChanged;
+        
         public string NodeName { get; set; }
         public string Description { get; set; }
+        public Port InputPort => _inputPort;
+        public Port OutputPort => _outputPort;
+
+        public Vector2 CanvasPosition
+        {
+            get => new(style.left.value.value, style.top.value.value);
+            set
+            {
+                style.left = value.x;
+                style.top = value.y;
+            }
+        }
         
-        public BehaviourNode(string nodeName = "Node", string description = "Node Description")
+        public BehaviourNode(string nodeName = "Node", string description = "Node Description", bool hasInput = true, bool hasOutput = true)
         {
             NodeName = nodeName;
             Description = description;
             SetupNode();
+            SetupPorts(hasInput, hasOutput);
             SetupDragging();
         }
         
@@ -50,177 +70,91 @@ namespace Dynamis.Behaviours.Editor.Views
             var header = new VisualElement
             {
                 name = "node-header",
-                style =
-                {
-                    backgroundColor = new Color(0.2f, 0.4f, 0.8f, 1f), // 蓝色头部
-                    height = 28,
+                style = {
+                    backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f), // 蓝色头部
+                    height = 30,
                     borderTopLeftRadius = 6,
                     borderTopRightRadius = 6,
-                    paddingLeft = 8,
-                    paddingRight = 8,
-                    paddingTop = 4,
-                    paddingBottom = 4,
-                    justifyContent = Justify.Center
+                    justifyContent = Justify.Center,
+                    alignItems = Align.Center
                 }
             };
             
             // 节点名称标签
             _nameLabel = new Label(NodeName)
             {
-                style =
-                {
+                name = "node-name-label",
+                style = {
                     color = Color.white,
                     fontSize = 12,
-                    unityTextAlign = TextAnchor.MiddleCenter,
                     unityFontStyleAndWeight = FontStyle.Bold,
-                    overflow = Overflow.Hidden,
-                    textOverflow = TextOverflow.Ellipsis
+                    unityTextAlign = TextAnchor.MiddleCenter
                 }
             };
             header.Add(_nameLabel);
+            Add(header);
             
             // 创建内容区域
             var content = new VisualElement
             {
                 name = "node-content",
-                style =
-                {
-                    paddingLeft = 8,
-                    paddingRight = 8,
-                    paddingTop = 6,
-                    paddingBottom = 6,
+                style = {
                     flexGrow = 1,
-                    justifyContent = Justify.Center
+                    paddingTop = 8,
+                    paddingBottom = 8,
+                    paddingLeft = 12,
+                    paddingRight = 12
                 }
             };
             
             // 描述标签
             _descriptionLabel = new Label(Description)
             {
-                style =
-                {
-                    color = new Color(0.8f, 0.8f, 0.8f, 1f), // 浅灰色文字
+                name = "node-description-label",
+                style = {
+                    color = new Color(0.8f, 0.8f, 0.8f, 1f),
                     fontSize = 10,
-                    unityTextAlign = TextAnchor.MiddleCenter,
-                    whiteSpace = WhiteSpace.Normal, // 允许换行
-                    overflow = Overflow.Hidden
+                    whiteSpace = WhiteSpace.Normal,
+                    unityTextAlign = TextAnchor.UpperLeft
                 }
             };
             content.Add(_descriptionLabel);
-            
-            // 添加连接点（输入和输出）
-            CreateConnectionPoints();
-            
-            Add(header);
             Add(content);
+        }
+        
+        private void SetupPorts(bool hasInput, bool hasOutput)
+        {
+            if (hasInput)
+            {
+                _inputPort = new Port(PortType.Input, this);
+                Add(_inputPort);
+            }
             
-            // 添加悬停效果
-            RegisterCallback<MouseEnterEvent>(OnMouseEnter);
-            RegisterCallback<MouseLeaveEvent>(OnMouseLeave);
+            if (hasOutput)
+            {
+                _outputPort = new Port(PortType.Output, this);
+                Add(_outputPort);
+            }
         }
         
         private void SetupDragging()
         {
-            // 注册拖拽相关的鼠标事件
+            // 注册鼠标事件
             RegisterCallback<MouseDownEvent>(OnMouseDown);
             RegisterCallback<MouseMoveEvent>(OnMouseMove);
             RegisterCallback<MouseUpEvent>(OnMouseUp);
-            RegisterCallback<MouseLeaveEvent>(OnMouseLeave);
-        }
-        
-        private void CreateConnectionPoints()
-        {
-            // 输入连接点（顶部）
-            var inputPoint = new VisualElement
-            {
-                name = "input-connection",
-                style =
-                {
-                    position = Position.Absolute,
-                    top = -6,
-                    left = new Length(50, LengthUnit.Percent),
-                    marginLeft = -6,
-                    width = 12,
-                    height = 12,
-                    backgroundColor = new Color(0.6f, 0.6f, 0.6f, 1f),
-                    borderTopLeftRadius = 6,
-                    borderTopRightRadius = 6,
-                    borderBottomLeftRadius = 6,
-                    borderBottomRightRadius = 6,
-                    borderTopWidth = 2,
-                    borderBottomWidth = 2,
-                    borderLeftWidth = 2,
-                    borderRightWidth = 2,
-                    borderTopColor = new Color(0.3f, 0.3f, 0.3f, 1f),
-                    borderBottomColor = new Color(0.3f, 0.3f, 0.3f, 1f),
-                    borderLeftColor = new Color(0.3f, 0.3f, 0.3f, 1f),
-                    borderRightColor = new Color(0.3f, 0.3f, 0.3f, 1f)
-                }
-            };
-            
-            // 输出连接点（底部）
-            var outputPoint = new VisualElement
-            {
-                name = "output-connection",
-                style =
-                {
-                    position = Position.Absolute,
-                    bottom = -6,
-                    left = new Length(50, LengthUnit.Percent),
-                    marginLeft = -6,
-                    width = 12,
-                    height = 12,
-                    backgroundColor = new Color(0.6f, 0.6f, 0.6f, 1f),
-                    borderTopLeftRadius = 6,
-                    borderTopRightRadius = 6,
-                    borderBottomLeftRadius = 6,
-                    borderBottomRightRadius = 6,
-                    borderTopWidth = 2,
-                    borderBottomWidth = 2,
-                    borderLeftWidth = 2,
-                    borderRightWidth = 2,
-                    borderTopColor = new Color(0.3f, 0.3f, 0.3f, 1f),
-                    borderBottomColor = new Color(0.3f, 0.3f, 0.3f, 1f),
-                    borderLeftColor = new Color(0.3f, 0.3f, 0.3f, 1f),
-                    borderRightColor = new Color(0.3f, 0.3f, 0.3f, 1f)
-                }
-            };
-            
-            Add(inputPoint);
-            Add(outputPoint);
-        }
-        
-        private void OnMouseEnter(MouseEnterEvent evt)
-        {
-            style.borderTopColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-            style.borderBottomColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-            style.borderLeftColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-            style.borderRightColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-        }
-        
-        private void OnMouseLeave(MouseLeaveEvent evt)
-        {
-            style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f);
-            style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 1f);
-            style.borderLeftColor = new Color(0.4f, 0.4f, 0.4f, 1f);
-            style.borderRightColor = new Color(0.4f, 0.4f, 0.4f, 1f);
         }
         
         private void OnMouseDown(MouseDownEvent evt)
         {
-            if (evt.button == 0) // 左键
+            // 只响应左键
+            if (evt.button == 0)
             {
                 _isDragging = true;
+                // _startMousePosition = evt.localMousePosition;
                 _startMousePosition = evt.mousePosition;
-                _startNodePosition = new Vector2(style.left.value.value, style.top.value.value);
-                
-                // 捕获鼠标，确保即使鼠标移出节点也能继续拖拽
+                _startNodePosition = CanvasPosition;
                 this.CaptureMouse();
-                
-                // 将节点置于最前显示
-                BringNodeToFront();
-                
-                // 阻止事件传播，避免影响画布的其他交互
                 evt.StopPropagation();
             }
         }
@@ -229,15 +163,16 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             if (_isDragging)
             {
-                // 计算新位置
-                var deltaPosition = evt.mousePosition - _startMousePosition;
-                var newNodePosition = _startNodePosition + deltaPosition;
+                // Vector2 mouseDelta = evt.localMousePosition - _startMousePosition;
+                Vector2 mouseDelta = evt.mousePosition - _startMousePosition;
+                CanvasPosition = _startNodePosition + mouseDelta;
                 
-                // 限制节点不能拖拽到画布外部（可选）
-                // newPosition = ClampToCanvas(newPosition);
+                // 通知端口更新位置
+                _inputPort?.UpdateWorldPosition();
+                _outputPort?.UpdateWorldPosition();
                 
-                // 设置新位置
-                SetPosition(newNodePosition);
+                // 通知连线更新
+                OnPositionChanged?.Invoke();
                 
                 evt.StopPropagation();
             }
@@ -249,67 +184,19 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 _isDragging = false;
                 this.ReleaseMouse();
-                
-                // 触发位置变更事件（用于后续扩展，如撤销/重做）
-                OnPositionChanged();
-                
                 evt.StopPropagation();
             }
         }
         
-        private Vector2 ClampToCanvas(Vector2 position)
-        {
-            // 获取画布面板
-            var canvas = GetFirstAncestorOfType<NodeCanvasPanel>();
-            if (canvas == null) return position;
-            
-            // 获取画布和节点的尺寸
-            var canvasRect = canvas.localBound;
-            var nodeWidth = style.width.value.value;
-            var nodeHeight = resolvedStyle.height;
-            
-            // 限制节点位置在画布范围内
-            position.x = Mathf.Clamp(position.x, 0, canvasRect.width - nodeWidth);
-            position.y = Mathf.Clamp(position.y, 0, canvasRect.height - nodeHeight);
-            
-            return position;
-        }
-        
-        private void BringNodeToFront()
-        {
-            // 将节点移到父容器的最后，使其显示在最前面
-            var parent = this.parent;
-            if (parent != null)
-            {
-                parent.Remove(this);
-                parent.Add(this);
-            }
-        }
-        
-        private void OnPositionChanged()
-        {
-            // 位置变更事件，可用于撤销/重做、自动保存等功能
-            // 目前为空实现，后续可以扩展
-        }
-        
-        public void UpdateNodeContent(string nodeName, string description)
-        {
-            NodeName = nodeName;
-            Description = description;
-            _nameLabel.text = nodeName;
-            _descriptionLabel.text = description;
-        }
-        
         public void SetPosition(Vector2 position)
         {
-            style.left = position.x;
-            style.top = position.y;
+            CanvasPosition = position;
         }
         
-        // 添加一个方法来获取当前是否正在拖拽
-        public bool IsDragging => _isDragging;
-        
-        // 添加一个方法来获取拖拽开始位置
-        public Vector2 StartNodePosition => _startNodePosition;
+        public void UpdateContent()
+        {
+            _nameLabel.text = NodeName;
+            _descriptionLabel.text = Description;
+        }
     }
 }
