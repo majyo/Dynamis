@@ -8,6 +8,11 @@ namespace Dynamis.Behaviours.Editor.Views
         private Label _nameLabel;
         private Label _descriptionLabel;
         
+        // 拖拽相关字段
+        private bool _isDragging;
+        private Vector2 _startMousePosition;
+        private Vector2 _startNodePosition;
+        
         public string NodeName { get; set; }
         public string Description { get; set; }
         
@@ -16,6 +21,7 @@ namespace Dynamis.Behaviours.Editor.Views
             NodeName = nodeName;
             Description = description;
             SetupNode();
+            SetupDragging();
         }
         
         private void SetupNode()
@@ -113,6 +119,15 @@ namespace Dynamis.Behaviours.Editor.Views
             RegisterCallback<MouseLeaveEvent>(OnMouseLeave);
         }
         
+        private void SetupDragging()
+        {
+            // 注册拖拽相关的鼠标事件
+            RegisterCallback<MouseDownEvent>(OnMouseDown);
+            RegisterCallback<MouseMoveEvent>(OnMouseMove);
+            RegisterCallback<MouseUpEvent>(OnMouseUp);
+            RegisterCallback<MouseLeaveEvent>(OnMouseLeave);
+        }
+        
         private void CreateConnectionPoints()
         {
             // 输入连接点（顶部）
@@ -191,6 +206,92 @@ namespace Dynamis.Behaviours.Editor.Views
             style.borderRightColor = new Color(0.4f, 0.4f, 0.4f, 1f);
         }
         
+        private void OnMouseDown(MouseDownEvent evt)
+        {
+            if (evt.button == 0) // 左键
+            {
+                _isDragging = true;
+                _startMousePosition = evt.mousePosition;
+                _startNodePosition = new Vector2(style.left.value.value, style.top.value.value);
+                
+                // 捕获鼠标，确保即使鼠标移出节点也能继续拖拽
+                this.CaptureMouse();
+                
+                // 将节点置于最前显示
+                BringNodeToFront();
+                
+                // 阻止事件传播，避免影响画布的其他交互
+                evt.StopPropagation();
+            }
+        }
+        
+        private void OnMouseMove(MouseMoveEvent evt)
+        {
+            if (_isDragging)
+            {
+                // 计算新位置
+                var deltaPosition = evt.mousePosition - _startMousePosition;
+                var newNodePosition = _startNodePosition + deltaPosition;
+                
+                // 限制节点不能拖拽到画布外部（可选）
+                // newPosition = ClampToCanvas(newPosition);
+                
+                // 设置新位置
+                SetPosition(newNodePosition);
+                
+                evt.StopPropagation();
+            }
+        }
+        
+        private void OnMouseUp(MouseUpEvent evt)
+        {
+            if (_isDragging && evt.button == 0)
+            {
+                _isDragging = false;
+                this.ReleaseMouse();
+                
+                // 触发位置变更事件（用于后续扩展，如撤销/重做）
+                OnPositionChanged();
+                
+                evt.StopPropagation();
+            }
+        }
+        
+        private Vector2 ClampToCanvas(Vector2 position)
+        {
+            // 获取画布面板
+            var canvas = GetFirstAncestorOfType<NodeCanvasPanel>();
+            if (canvas == null) return position;
+            
+            // 获取画布和节点的尺寸
+            var canvasRect = canvas.localBound;
+            var nodeWidth = style.width.value.value;
+            var nodeHeight = resolvedStyle.height;
+            
+            // 限制节点位置在画布范围内
+            position.x = Mathf.Clamp(position.x, 0, canvasRect.width - nodeWidth);
+            position.y = Mathf.Clamp(position.y, 0, canvasRect.height - nodeHeight);
+            
+            return position;
+        }
+        
+        private void BringNodeToFront()
+        {
+            // 将节点移到父容器的最后，使其显示在最前面
+            var parent = this.parent;
+            if (parent != null)
+            {
+                parent.Remove(this);
+                parent.Add(this);
+            }
+        }
+        
+        private void OnPositionChanged()
+        {
+            // 位置变更事件，可用于撤销/重做、自动保存等功能
+            // 目前为空实现，后续可以扩展
+        }
+        
         public void UpdateNodeContent(string nodeName, string description)
         {
             NodeName = nodeName;
@@ -204,5 +305,11 @@ namespace Dynamis.Behaviours.Editor.Views
             style.left = position.x;
             style.top = position.y;
         }
+        
+        // 添加一个方法来获取当前是否正在拖拽
+        public bool IsDragging => _isDragging;
+        
+        // 添加一个方法来获取拖拽开始位置
+        public Vector2 StartNodePosition => _startNodePosition;
     }
 }

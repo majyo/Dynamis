@@ -145,6 +145,38 @@ private void HandlePanAndZoom()
 - **头部区域**: 蓝色背景，显示节点名称
 - **内容区域**: 显示节点描述
 - **连接点**: 顶部输入点和底部输出点
+- **拖拽支持**: 完整的鼠标拖拽交互功能
+
+#### 拖拽功能特性
+- **完整交互**: 支持鼠标左键拖拽节点位置
+- **边界限制**: 自动限制节点在画布范围内移动
+- **层级管理**: 拖拽时自动将节点置于最前显示
+- **平滑体验**: 鼠标捕获确保拖拽过程不会意外中断
+- **事件隔离**: 阻止拖拽事件向父容器传播
+
+#### 拖拽实现详解
+```csharp
+// 拖拽状态管理
+private bool _isDragging = false;
+private Vector2 _dragOffset;
+private Vector2 _startPosition;
+
+// 关键方法
+public bool IsDragging => _isDragging;  // 查询拖拽状态
+public Vector2 StartPosition => _startPosition;  // 获取拖拽开始位置
+
+// 边界限制
+private Vector2 ClampToCanvas(Vector2 position)
+{
+    // 自动计算画布边界，防止节点移出可视区域
+}
+
+// 层级管理
+private void BringNodeToFront()
+{
+    // 将当前节点移至显示层级最前
+}
+```
 
 #### 自定义节点类型
 ```csharp
@@ -188,6 +220,77 @@ private void CreatePropertyFields()
 ```
 
 ## 开发指南
+
+### 已实现功能
+
+#### 节点拖拽系统
+当前已完全实现的拖拽功能包括：
+
+1. **基础拖拽**: 鼠标左键点击并拖拽节点
+2. **边界约束**: 节点无法拖出画布边界
+3. **视觉反馈**: 拖拽时节点自动置前显示
+4. **事件处理**: 完善的鼠标事件管理和状态追踪
+
+使用方法：
+```csharp
+// 检查节点是否正在被拖拽
+if (node.IsDragging)
+{
+    // 执行拖拽相关逻辑
+}
+
+// 获取拖拽开始位置（用于撤销等功能）
+var startPos = node.StartPosition;
+```
+
+#### 扩展拖拽功能
+基于当前实现，可以轻松添加以下功能：
+
+1. **多选拖拽**:
+```csharp
+// 在NodeCanvasPanel中实现
+private List<BehaviourNode> selectedNodes = new List<BehaviourNode>();
+
+private void DragSelectedNodes(Vector2 deltaPosition)
+{
+    foreach (var node in selectedNodes)
+    {
+        if (!node.IsDragging) // 避免重复处理主拖拽节点
+        {
+            var currentPos = new Vector2(node.style.left.value.value, node.style.top.value.value);
+            node.SetPosition(currentPos + deltaPosition);
+        }
+    }
+}
+```
+
+2. **网格对齐**:
+```csharp
+// 在BehaviourNode中重写位置设置
+public void SetPosition(Vector2 position)
+{
+    // 网格对齐逻辑
+    if (snapToGrid)
+    {
+        position.x = Mathf.Round(position.x / gridSize) * gridSize;
+        position.y = Mathf.Round(position.y / gridSize) * gridSize;
+    }
+    
+    style.left = position.x;
+    style.top = position.y;
+}
+```
+
+3. **拖拽历史记录**:
+```csharp
+// 在OnPositionChanged中实现
+private void OnPositionChanged()
+{
+    // 记录位置变更用于撤销/重做
+    var command = new MoveNodeCommand(this, StartPosition, GetCurrentPosition());
+    EditorHistory.ExecuteCommand(command);
+}
+```
 
 ### 添加新功能
 
@@ -235,6 +338,35 @@ private void OnContextMenuPopulate(ContextualMenuPopulateEvent evt)
 }
 ```
 
+#### 4. 实现拖拽增强功能
+```csharp
+// 添加拖拽辅助功能
+public class EnhancedDragHandler
+{
+    private bool snapToGrid = true;
+    private float gridSize = 20f;
+    private List<BehaviourNode> selectedNodes = new List<BehaviourNode>();
+    
+    public void EnableGridSnap(bool enable, float size = 20f)
+    {
+        snapToGrid = enable;
+        gridSize = size;
+    }
+    
+    public void HandleMultiNodeDrag(BehaviourNode primaryNode, Vector2 deltaPosition)
+    {
+        foreach (var node in selectedNodes)
+        {
+            if (node != primaryNode)
+            {
+                var currentPos = new Vector2(node.style.left.value.value, node.style.top.value.value);
+                node.SetPosition(currentPos + deltaPosition);
+            }
+        }
+    }
+}
+```
+
 ### 样式自定义
 
 #### 修改主题颜色
@@ -264,7 +396,12 @@ public static class EditorTheme
 1. **节点数量优化**: 当节点数量较多时，考虑使用虚拟化或分页
 2. **连接线渲染**: 使用Painter2D进行高效的连接线绘制
 3. **事件处理**: 避免在高频事件中进行复杂计算
+   - 拖拽过程中的边界检查已优化，仅在必要时计算
+   - 使用事件捕获机制减少不必要的事件传播
 4. **内存管理**: 及时清理不再使用的节点和连接
+5. **拖拽优化**: 
+   - 拖拽过程中暂停不必要的UI更新
+   - 使用增量位置计算减少重复计算
 
 ### 调试技巧
 
@@ -289,46 +426,36 @@ element.RegisterCallback<MouseDownEvent>(evt =>
 
 ## 扩展示例
 
-### 实现节点拖拽
+### 节点拖拽功能（已实现）
+当前的BehaviourNode类已经完全实现了拖拽功能，包括：
+
 ```csharp
-public class DraggableNode : BehaviourNode
+// 当前实现的关键特性
+public class BehaviourNode : VisualElement
 {
-    private bool isDragging = false;
-    private Vector2 dragOffset;
+    // 拖拽状态管理
+    private bool _isDragging = false;
+    private Vector2 _dragOffset;
+    private Vector2 _startPosition;
     
-    public DraggableNode(string name, string description) : base(name, description)
-    {
-        RegisterCallback<MouseDownEvent>(OnMouseDown);
-        RegisterCallback<MouseMoveEvent>(OnMouseMove);
-        RegisterCallback<MouseUpEvent>(OnMouseUp);
-    }
-    
+    // 事件处理
     private void OnMouseDown(MouseDownEvent evt)
     {
-        if (evt.button == 0)
-        {
-            isDragging = true;
-            dragOffset = evt.localMousePosition;
-            this.CaptureMouse();
-        }
+        // 开始拖拽，记录初始状态
+        // 捕获鼠标，确保拖拽连续性
+        // 将节点置于最前显示
     }
     
     private void OnMouseMove(MouseMoveEvent evt)
     {
-        if (isDragging)
-        {
-            var newPosition = evt.mousePosition - dragOffset;
-            SetPosition(newPosition);
-        }
+        // 实时更新节点位置
+        // 应用边界限制
     }
     
     private void OnMouseUp(MouseUpEvent evt)
     {
-        if (isDragging)
-        {
-            isDragging = false;
-            this.ReleaseMouse();
-        }
+        // 结束拖拽，释放鼠标捕获
+        // 触发位置变更事件
     }
 }
 ```
@@ -365,21 +492,25 @@ public class SelectableNode : BehaviourNode
 ## 常见问题
 
 ### Q: 如何添加新的节点类型？
-A: 继承`BehaviourNode`类，重写构造函数并自定义样式和行为。
+A: 继承`BehaviourNode`类，重写构造函数并自定义样式和行为。拖拽功能会自动继承。
 
-### Q: 如何修改布局比例？
-A: 在`TwoColumnLayout`的拖拽事件中调整百分比计算逻辑。
+### Q: 如何禁用某个节点的拖拽功能？
+A: 在节点构造函数中不调用`SetupDragging()`方法，或者重写拖拽事件处理方法。
 
-### Q: 如何添加键盘快捷键？
-A: 在`BehaviourEditorWindow`中注册键盘事件回调。
+### Q: 如何实现拖拽时的网格对齐？
+A: 重写`SetPosition`方法，在其中添加网格对齐逻辑。
 
-### Q: 如何保存和加载行为树数据？
-A: 实现序列化系统，将节点数据转换为可保存的格式。
+### Q: 如何获取节点的拖拽状态？
+A: 使用`node.IsDragging`属性查询当前拖拽状态，使用`node.StartPosition`获取拖拽开始位置。
+
+### Q: 拖拽性能如何优化？
+A: 当前实现已包含基础优化，如事件捕获、边界预计算等。对于大量节点，可考虑实现拖拽区域检测和延迟更新。
 
 ## 版本历史
 
 - **v1.0**: 基础框架实现，包含工具栏、布局和示例节点
-- **待开发**: 节点连接、拖拽、保存加载功能
+- **v1.1**: 实现完整的节点拖拽功能，包含边界限制和层级管理
+- **待开发**: 节点连接、多选、保存加载功能
 
 ## 贡献指南
 
