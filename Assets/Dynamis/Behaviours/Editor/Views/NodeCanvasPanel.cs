@@ -7,10 +7,13 @@ namespace Dynamis.Behaviours.Editor.Views
     public class NodeCanvasPanel : VisualElement
     {
         // 画布拖拽相关字段
-        private bool _isDragging;
+        private bool _isCanvasDragging;
         private Vector2 _startMousePosition;
         private Vector2 _canvasOffset = Vector2.zero;
         private VisualElement _contentContainer;
+        
+        // 节点拖拽相关字段
+        private BehaviourNode _draggingNode;
         
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
@@ -19,7 +22,7 @@ namespace Dynamis.Behaviours.Editor.Views
         public NodeCanvasPanel()
         {
             SetupPanel();
-            SetupCanvasDragging();
+            SetupEventHandling();
             AddSampleNodes();
             CreateSampleConnections();
         }
@@ -56,7 +59,7 @@ namespace Dynamis.Behaviours.Editor.Views
             _contentContainer.Add(_connectionRenderer);
         }
         
-        private void SetupCanvasDragging()
+        private void SetupEventHandling()
         {
             // 注册鼠标事件
             RegisterCallback<MouseDownEvent>(OnMouseDown);
@@ -69,10 +72,25 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnMouseDown(MouseDownEvent evt)
         {
-            // 检查是否按下了中键或右键（用于画布拖拽）
+            // 优先处理节点拖拽（左键）
+            if (evt.button == 0)
+            {
+                // 检查是否点击在节点上
+                var clickedNode = GetNodeAtPosition(evt.localMousePosition);
+                if (clickedNode != null)
+                {
+                    _draggingNode = clickedNode;
+                    _draggingNode.StartDragging(evt.mousePosition);
+                    this.CaptureMouse();
+                    evt.StopPropagation();
+                    return;
+                }
+            }
+            
+            // 处理画布拖拽（中键或右键）
             if (evt.button == 1 || evt.button == 2) // 中键=1, 右键=2
             {
-                _isDragging = true;
+                _isCanvasDragging = true;
                 _startMousePosition = evt.localMousePosition;
                 this.CaptureMouse();
                 evt.StopPropagation();
@@ -81,7 +99,16 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnMouseMove(MouseMoveEvent evt)
         {
-            if (_isDragging)
+            // 处理节点拖拽
+            if (_draggingNode != null && _draggingNode.IsDragging)
+            {
+                _draggingNode.UpdateDragging(evt.mousePosition);
+                evt.StopPropagation();
+                return;
+            }
+            
+            // 处理画布拖拽
+            if (_isCanvasDragging)
             {
                 // 计算鼠标移动距离
                 Vector2 mouseDelta = evt.localMousePosition - _startMousePosition;
@@ -101,12 +128,41 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnMouseUp(MouseUpEvent evt)
         {
-            if (_isDragging && (evt.button == 1 || evt.button == 2))
+            // 处理节点拖拽结束
+            if (_draggingNode != null && evt.button == 0)
             {
-                _isDragging = false;
+                _draggingNode.EndDragging();
+                _draggingNode = null;
+                this.ReleaseMouse();
+                evt.StopPropagation();
+                return;
+            }
+            
+            // 处理画布拖拽结束
+            if (_isCanvasDragging && (evt.button == 1 || evt.button == 2))
+            {
+                _isCanvasDragging = false;
                 this.ReleaseMouse();
                 evt.StopPropagation();
             }
+        }
+        
+        // 获取指定位置的节点
+        private BehaviourNode GetNodeAtPosition(Vector2 mousePosition)
+        {
+            // 转换鼠标位置到内容容器的本地坐标
+            Vector2 localPosition = mousePosition - _canvasOffset;
+            
+            // 遍历所有子元素，找到包含该点的节点
+            foreach (var child in _contentContainer.Children())
+            {
+                if (child is BehaviourNode node && node.ContainsPoint(localPosition))
+                {
+                    return node;
+                }
+            }
+            
+            return null;
         }
         
         public void AddConnection(NodeConnection connection)
@@ -133,35 +189,35 @@ namespace Dynamis.Behaviours.Editor.Views
             // Root节点 - 只有输出端口
             var rootNode = new BehaviourNode("Root", "Behaviour tree root node", false, true);
             rootNode.CanvasPosition = new Vector2(200, 50);
-            rootNode.OnPositionChanged = RefreshConnections; // 绑定位置变化回调
+            rootNode.onPositionChanged = RefreshConnections; // 绑定位置变化回调
             _contentContainer.Add(rootNode);
             
             // Selector节点 - 有输入和输出端口
             var selectorNode = new BehaviourNode("Selector", "Select first successful child");
             selectorNode.CanvasPosition = new Vector2(150, 180);
-            selectorNode.OnPositionChanged = RefreshConnections;
+            selectorNode.onPositionChanged = RefreshConnections;
             _contentContainer.Add(selectorNode);
             
             // Sequence节点 - 有输入和输出端口
             var sequenceNode = new BehaviourNode("Sequence", "Execute children in order");
             sequenceNode.CanvasPosition = new Vector2(250, 180);
-            sequenceNode.OnPositionChanged = RefreshConnections;
+            sequenceNode.onPositionChanged = RefreshConnections;
             _contentContainer.Add(sequenceNode);
             
             // Action节点 - 只有输入端口
             var actionNode1 = new BehaviourNode("Move To Target", "Move character to target position", true, false);
             actionNode1.CanvasPosition = new Vector2(100, 310);
-            actionNode1.OnPositionChanged = RefreshConnections;
+            actionNode1.onPositionChanged = RefreshConnections;
             _contentContainer.Add(actionNode1);
             
             var actionNode2 = new BehaviourNode("Attack Enemy", "Perform attack on enemy target", true, false);
             actionNode2.CanvasPosition = new Vector2(200, 310);
-            actionNode2.OnPositionChanged = RefreshConnections;
+            actionNode2.onPositionChanged = RefreshConnections;
             _contentContainer.Add(actionNode2);
             
             var actionNode3 = new BehaviourNode("Wait", "Wait for specified duration", true, false);
             actionNode3.CanvasPosition = new Vector2(300, 310);
-            actionNode3.OnPositionChanged = RefreshConnections;
+            actionNode3.onPositionChanged = RefreshConnections;
             _contentContainer.Add(actionNode3);
             
             // 存储节点引用以便创建连线

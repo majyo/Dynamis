@@ -65,8 +65,8 @@ namespace Dynamis.Behaviours.Editor.Views
         private static void DrawConnection(Painter2D painter, NodeConnection connection)
         {
             // 获取贝塞尔曲线的关键点
-            connection.GetBezierPoints(out Vector2 startPoint, out Vector2 endPoint, 
-                                     out Vector2 startTangent, out Vector2 endTangent);
+            connection.GetBezierPoints(out var startPoint, out var endPoint, 
+                                     out var startTangent, out var endTangent);
             
             // 设置绘制样式
             painter.strokeColor = connection.ConnectionColor;

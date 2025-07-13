@@ -34,11 +34,11 @@ namespace Dynamis.Behaviours.Editor.Views
             
             // 计算贝塞尔曲线的切线长度，基于连接距离
             float distance = Vector2.Distance(startPoint, endPoint);
-            float tangentLength = Mathf.Max(50f, distance * 0.3f);
+            float tangentLength = Mathf.Max(40f, distance * 0.3f);
             
-            // 输出端口向右，输入端口向左
-            startTangent = startPoint + Vector2.right * tangentLength;
-            endTangent = endPoint + Vector2.left * tangentLength;
+            // 计算切线点
+            startTangent = startPoint + Vector2.up * tangentLength;
+            endTangent = endPoint + Vector2.down * tangentLength;
         }
     }
 }

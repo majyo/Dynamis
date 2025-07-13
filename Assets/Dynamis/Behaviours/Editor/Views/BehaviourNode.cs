@@ -8,7 +8,7 @@ namespace Dynamis.Behaviours.Editor.Views
         private Label _nameLabel;
         private Label _descriptionLabel;
         
-        // 拖拽相关字段
+        // 拖拽相关字段 - 保留用于外部控制
         private bool _isDragging;
         private Vector2 _startMousePosition;
         private Vector2 _startNodePosition;
@@ -18,12 +18,31 @@ namespace Dynamis.Behaviours.Editor.Views
         private Port _outputPort;
         
         // 连线更新回调
-        public System.Action OnPositionChanged;
+        public System.Action onPositionChanged;
         
         public string NodeName { get; set; }
         public string Description { get; set; }
         public Port InputPort => _inputPort;
         public Port OutputPort => _outputPort;
+
+        // 拖拽状态属性，供外部访问
+        public bool IsDragging 
+        { 
+            get => _isDragging; 
+            set => _isDragging = value; 
+        }
+
+        public Vector2 StartMousePosition 
+        { 
+            get => _startMousePosition; 
+            set => _startMousePosition = value; 
+        }
+
+        public Vector2 StartNodePosition 
+        { 
+            get => _startNodePosition; 
+            set => _startNodePosition = value; 
+        }
 
         public Vector2 CanvasPosition
         {
@@ -35,7 +54,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        public Vector2 CanvasSize => new(style.width.value.value, style.height.value.value);
+        public Vector2 CanvasSize => new(resolvedStyle.width, resolvedStyle.height);
 
         public BehaviourNode(string nodeName = "Node", string description = "Node Description", bool hasInput = true, bool hasOutput = true)
         {
@@ -43,7 +62,6 @@ namespace Dynamis.Behaviours.Editor.Views
             Description = description;
             SetupNode();
             SetupPorts(hasInput, hasOutput);
-            SetupDragging();
         }
         
         private void SetupNode()
@@ -139,36 +157,20 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
         
-        private void SetupDragging()
+        // 开始拖拽 - 供外部调用
+        public void StartDragging(Vector2 mousePosition)
         {
-            // 注册鼠标事件
-            RegisterCallback<MouseDownEvent>(OnMouseDown);
-            RegisterCallback<MouseMoveEvent>(OnMouseMove);
-            RegisterCallback<MouseUpEvent>(OnMouseUp);
+            _isDragging = true;
+            _startMousePosition = mousePosition;
+            _startNodePosition = CanvasPosition;
         }
         
-        private void OnMouseDown(MouseDownEvent evt)
-        {
-            // 只响应左键
-            if (evt.button == 0)
-            {
-                _isDragging = true;
-                // _startMousePosition = evt.localMousePosition;
-                _startMousePosition = evt.mousePosition;
-                _startNodePosition = CanvasPosition;
-                this.CaptureMouse();
-                evt.StopPropagation();
-            }
-            
-            Debug.Log(CanvasSize);
-        }
-        
-        private void OnMouseMove(MouseMoveEvent evt)
+        // 执行拖拽移动 - 供外部调用
+        public void UpdateDragging(Vector2 mousePosition)
         {
             if (_isDragging)
             {
-                // Vector2 mouseDelta = evt.localMousePosition - _startMousePosition;
-                Vector2 mouseDelta = evt.mousePosition - _startMousePosition;
+                Vector2 mouseDelta = mousePosition - _startMousePosition;
                 CanvasPosition = _startNodePosition + mouseDelta;
                 
                 // 通知端口更新位置
@@ -176,20 +178,21 @@ namespace Dynamis.Behaviours.Editor.Views
                 _outputPort?.UpdateWorldPosition();
                 
                 // 通知连线更新
-                OnPositionChanged?.Invoke();
-                
-                evt.StopPropagation();
+                onPositionChanged?.Invoke();
             }
         }
         
-        private void OnMouseUp(MouseUpEvent evt)
+        // 结束拖拽 - 供外部调用
+        public void EndDragging()
         {
-            if (_isDragging && evt.button == 0)
-            {
-                _isDragging = false;
-                this.ReleaseMouse();
-                evt.StopPropagation();
-            }
+            _isDragging = false;
+        }
+        
+        // 检查点是否在节点内
+        public new bool ContainsPoint(Vector2 point)
+        {
+            var rect = new Rect(CanvasPosition.x, CanvasPosition.y, CanvasSize.x, CanvasSize.y);
+            return rect.Contains(point);
         }
         
         public void SetPosition(Vector2 position)
