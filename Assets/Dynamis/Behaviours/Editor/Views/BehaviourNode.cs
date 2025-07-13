@@ -239,31 +239,23 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void UpdateNodeStyles()
         {
-            // 获取头部元素
-            var header = this.Q<VisualElement>("node-header");
-            
-            // 根据四种状态组合设置不同的样式
+            // 根据四种状态组合设置不同的边框样式，保持背景颜色不变用于区分节点种类
             if (_isSelected && _isHovered)
             {
-                // 选中且悬浮：最亮的样式
-                style.backgroundColor = new Color(0.35f, 0.35f, 0.35f, 1f);
-                style.borderTopColor = new Color(1f, 0.8f, 0.3f, 1f); // 金黄色边框
+                // 选中且悬浮：金黄色粗边框 + 发光效果
+                style.borderTopColor = new Color(1f, 0.8f, 0.3f, 1f);
                 style.borderBottomColor = new Color(1f, 0.8f, 0.3f, 1f);
                 style.borderLeftColor = new Color(1f, 0.8f, 0.3f, 1f);
                 style.borderRightColor = new Color(1f, 0.8f, 0.3f, 1f);
-                style.borderTopWidth = 3;
-                style.borderBottomWidth = 3;
-                style.borderLeftWidth = 3;
-                style.borderRightWidth = 3;
-                
-                if (header != null)
-                    header.style.backgroundColor = new Color(0.8f, 0.6f, 0.2f, 1f); // 金黄色头部
+                style.borderTopWidth = 4;
+                style.borderBottomWidth = 4;
+                style.borderLeftWidth = 4;
+                style.borderRightWidth = 4;
             }
             else if (_isSelected)
             {
-                // 仅选中：橙色主题
-                style.backgroundColor = new Color(0.3f, 0.3f, 0.3f, 1f);
-                style.borderTopColor = new Color(1f, 0.6f, 0.2f, 1f); // 橙色边框
+                // 仅选中：橙色粗边框
+                style.borderTopColor = new Color(1f, 0.6f, 0.2f, 1f);
                 style.borderBottomColor = new Color(1f, 0.6f, 0.2f, 1f);
                 style.borderLeftColor = new Color(1f, 0.6f, 0.2f, 1f);
                 style.borderRightColor = new Color(1f, 0.6f, 0.2f, 1f);
@@ -271,30 +263,22 @@ namespace Dynamis.Behaviours.Editor.Views
                 style.borderBottomWidth = 3;
                 style.borderLeftWidth = 3;
                 style.borderRightWidth = 3;
-                
-                if (header != null)
-                    header.style.backgroundColor = new Color(0.7f, 0.4f, 0.1f, 1f); // 橙色头部
             }
             else if (_isHovered)
             {
-                // 仅悬浮：浅色主题
-                style.backgroundColor = new Color(0.32f, 0.32f, 0.32f, 1f);
-                style.borderTopColor = new Color(0.6f, 0.6f, 0.6f, 1f); // 浅色边框
-                style.borderBottomColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-                style.borderLeftColor = new Color(0.6f, 0.6f, 0.6f, 1f);
-                style.borderRightColor = new Color(0.6f, 0.6f, 0.6f, 1f);
+                // 仅悬浮：白色中等边框
+                style.borderTopColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+                style.borderBottomColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+                style.borderLeftColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+                style.borderRightColor = new Color(0.9f, 0.9f, 0.9f, 1f);
                 style.borderTopWidth = 2;
                 style.borderBottomWidth = 2;
                 style.borderLeftWidth = 2;
                 style.borderRightWidth = 2;
-                
-                if (header != null)
-                    header.style.backgroundColor = new Color(0.15f, 0.4f, 0.7f, 1f); // 稍亮的蓝色头部
             }
             else
             {
-                // 默认状态：原始样式
-                style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
+                // 默认状态：原始边框样式
                 style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f);
                 style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 1f);
                 style.borderLeftColor = new Color(0.4f, 0.4f, 0.4f, 1f);
@@ -303,9 +287,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 style.borderBottomWidth = 2;
                 style.borderLeftWidth = 2;
                 style.borderRightWidth = 2;
-                
-                if (header != null)
-                    header.style.backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f); // 原始蓝色头部
             }
         }
     }
