@@ -61,7 +61,7 @@ namespace Dynamis.Behaviours.Editor
             _popupMenu = new CustomPopupMenu();
             _popupMenu.Title = "操作菜单";
             
-            // 添加菜单项
+            // 添加基本菜单项
             _popupMenu.AddMenuItem("创建新对象", () => {
                 Debug.Log("创建新对象被点击");
                 ShowNotification(new GUIContent("创建新对象"));
@@ -74,18 +74,76 @@ namespace Dynamis.Behaviours.Editor
             
             _popupMenu.AddSeparator();
             
-            _popupMenu.AddMenuItem("复制", () => {
+            // 添加编辑分组
+            var editGroup = _popupMenu.AddGroup("编辑操作");
+            editGroup.AddChild("复制", () => {
                 Debug.Log("复制被点击");
                 ShowNotification(new GUIContent("复制"));
             });
-            
-            _popupMenu.AddMenuItem("粘贴", () => {
+            editGroup.AddChild("粘贴", () => {
                 Debug.Log("粘贴被点击");
                 ShowNotification(new GUIContent("粘贴"));
+            });
+            editGroup.AddChild("剪切", () => {
+                Debug.Log("剪切被点击");
+                ShowNotification(new GUIContent("剪切"));
+            });
+            
+            editGroup.AddChildSeparator();
+            
+            editGroup.AddChild("撤销", () => {
+                Debug.Log("撤销被点击");
+                ShowNotification(new GUIContent("撤销"));
+            });
+            editGroup.AddChild("重做", () => {
+                Debug.Log("重做被点击");
+                ShowNotification(new GUIContent("重做"));
+            });
+            
+            // 添加变换分组
+            var transformGroup = _popupMenu.AddGroup("变换");
+            transformGroup.AddChild("移动", () => {
+                Debug.Log("移动被点击");
+                ShowNotification(new GUIContent("移动"));
+            });
+            transformGroup.AddChild("旋转", () => {
+                Debug.Log("旋转被点击");
+                ShowNotification(new GUIContent("旋转"));
+            });
+            transformGroup.AddChild("缩放", () => {
+                Debug.Log("缩放被点击");
+                ShowNotification(new GUIContent("缩放"));
+            });
+            
+            // 在变换分组中添加子分组
+            var advancedTransform = transformGroup.AddChildGroup("高级变换");
+            advancedTransform.AddChild("重置位置", () => {
+                Debug.Log("重置位置被点击");
+                ShowNotification(new GUIContent("重置位置"));
+            });
+            advancedTransform.AddChild("重置旋转", () => {
+                Debug.Log("重置旋转被点击");
+                ShowNotification(new GUIContent("重置旋转"));
+            });
+            advancedTransform.AddChild("重置缩放", () => {
+                Debug.Log("重置缩放被点击");
+                ShowNotification(new GUIContent("重置缩放"));
             });
             
             _popupMenu.AddSeparator();
             
+            // 添加查看分组
+            var viewGroup = _popupMenu.AddGroup("查看");
+            viewGroup.AddChild("聚焦到对象", () => {
+                Debug.Log("聚焦到对象被点击");
+                ShowNotification(new GUIContent("聚焦到对象"));
+            });
+            viewGroup.AddChild("框选显示", () => {
+                Debug.Log("框选显示被点击");
+                ShowNotification(new GUIContent("框选显示"));
+            });
+            
+            // 添加属性菜单项
             _popupMenu.AddMenuItem("属性", () => {
                 Debug.Log("属性被点击");
                 ShowNotification(new GUIContent("打开属性"));
