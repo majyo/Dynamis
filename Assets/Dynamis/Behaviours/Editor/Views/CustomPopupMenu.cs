@@ -14,7 +14,6 @@ namespace Dynamis.Behaviours.Editor.Views
         private VisualElement _container;
         private Label _titleLabel;
         private VisualElement _itemsContainer;
-        private Button _closeButton;
         private readonly List<PopupMenuItem> _menuItems;
         private bool _isVisible;
 
@@ -48,29 +47,36 @@ namespace Dynamis.Behaviours.Editor.Views
         private void InitializeMenu()
         {
             // Main container
-            _container = new VisualElement();
-            _container.name = "popup-container";
+            _container = new VisualElement
+            {
+                name = "popup-container"
+            };
             Add(_container);
 
-            // Header with title and close button
-            var header = new VisualElement();
-            header.name = "popup-header";
-            header.style.flexDirection = FlexDirection.Row;
-            header.style.justifyContent = Justify.SpaceBetween;
-            header.style.alignItems = Align.Center;
+            // Header with title
+            var header = new VisualElement
+            {
+                name = "popup-header",
+                style =
+                {
+                    flexDirection = FlexDirection.Row,
+                    justifyContent = Justify.FlexStart,
+                    alignItems = Align.Center
+                }
+            };
             _container.Add(header);
 
-            _titleLabel = new Label("Menu");
-            _titleLabel.name = "popup-title";
+            _titleLabel = new Label("Menu")
+            {
+                name = "popup-title"
+            };
             header.Add(_titleLabel);
 
-            _closeButton = new Button(() => Hide()) { text = "✕" };
-            _closeButton.name = "popup-close-button";
-            header.Add(_closeButton);
-
             // Items container
-            _itemsContainer = new VisualElement();
-            _itemsContainer.name = "popup-items";
+            _itemsContainer = new VisualElement
+            {
+                name = "popup-items"
+            };
             _container.Add(_itemsContainer);
         }
 
@@ -79,48 +85,53 @@ namespace Dynamis.Behaviours.Editor.Views
             // Main popup styles
             style.position = Position.Absolute;
             style.backgroundColor = new Color(0.2f, 0.2f, 0.2f, 0.95f);
-            style.borderTopWidth = 2;
-            style.borderBottomWidth = 2;
-            style.borderLeftWidth = 2;
-            style.borderRightWidth = 2;
+            style.borderTopWidth = 1;
+            style.borderBottomWidth = 1;
+            style.borderLeftWidth = 1;
+            style.borderRightWidth = 1;
             style.borderTopColor = Color.gray;
             style.borderBottomColor = Color.gray;
             style.borderLeftColor = Color.gray;
             style.borderRightColor = Color.gray;
-            style.borderTopLeftRadius = 5;
-            style.borderTopRightRadius = 5;
-            style.borderBottomLeftRadius = 5;
-            style.borderBottomRightRadius = 5;
-            style.minWidth = 200;
-            style.maxWidth = 400;
+            style.borderTopLeftRadius = 3;
+            style.borderTopRightRadius = 3;
+            style.borderBottomLeftRadius = 3;
+            style.borderBottomRightRadius = 3;
+            style.minWidth = 150;
+            style.maxWidth = 300;
+            style.paddingTop = 0;
+            style.paddingBottom = 6;
+            style.paddingLeft = 4;
+            style.paddingRight = 4;
 
-            // Container styles
-            // m_Container.style.padding = new StyleLength(10);
+            // Container styles - 减少内边距
+            _container.style.paddingTop = 0;
+            _container.style.paddingBottom = 0;
+            _container.style.paddingLeft = 0;
+            _container.style.paddingRight = 0;
 
-            // Header styles
+            // Header styles - 加深背景色，增强区分
             var header = _container.Q("popup-header");
-            header.style.marginBottom = 10;
-            header.style.paddingBottom = 5;
+            header.style.backgroundColor = new Color(0.15f, 0.15f, 0.15f, 1f); // 更深的背景色
+            header.style.marginBottom = 0;
+            header.style.paddingBottom = 4;
+            header.style.paddingTop = 4;
+            header.style.paddingLeft = 8;
+            header.style.paddingRight = 8;
             header.style.borderBottomWidth = 1;
-            header.style.borderBottomColor = Color.gray;
+            header.style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 0.8f);
+            header.style.borderTopLeftRadius = 2;
+            header.style.borderTopRightRadius = 2;
 
-            // Title styles
-            _titleLabel.style.fontSize = 16;
+            // Title styles - 减少字体大小
+            _titleLabel.style.fontSize = 13;
             _titleLabel.style.color = Color.white;
             _titleLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
 
-            // Close button styles
-            _closeButton.style.width = 20;
-            _closeButton.style.height = 20;
-            _closeButton.style.backgroundColor = Color.clear;
-            _closeButton.style.borderTopWidth = 0;
-            _closeButton.style.borderBottomWidth = 0;
-            _closeButton.style.borderLeftWidth = 0;
-            _closeButton.style.borderRightWidth = 0;
-            _closeButton.style.color = Color.white;
-
-            // Items container styles
+            // Items container styles - 减少间距
             _itemsContainer.style.flexDirection = FlexDirection.Column;
+            _itemsContainer.style.paddingTop = 4;
+            _itemsContainer.style.paddingBottom = 0;
         }
 
         public void AddMenuItem(string text, Action callback = null, bool enabled = true)
@@ -155,7 +166,7 @@ namespace Dynamis.Behaviours.Editor.Views
             style.top = position.y;
             
             // Ensure the menu stays within screen bounds
-            this.schedule.Execute(() => AdjustPosition()).ExecuteLater(1);
+            this.schedule.Execute(AdjustPosition).ExecuteLater(1);
         }
 
         public void Hide()
@@ -220,7 +231,12 @@ namespace Dynamis.Behaviours.Editor.Views
     {
         public PopupMenuItem(string text, Action callback = null, bool enabled = true)
         {
-            this.text = text;
+            Initialize(text, callback, enabled);
+        }
+
+        private void Initialize(string itemText, Action callback, bool enabled)
+        {
+            this.text = itemText;
             this.SetEnabled(enabled);
             
             if (callback != null)
@@ -238,14 +254,16 @@ namespace Dynamis.Behaviours.Editor.Views
             style.borderBottomWidth = 0;
             style.borderLeftWidth = 0;
             style.borderRightWidth = 0;
-            style.paddingTop = 8;
-            style.paddingBottom = 8;
-            style.paddingLeft = 12;
-            style.paddingRight = 12;
-            style.marginTop = 1;
-            style.marginBottom = 1;
+            style.paddingTop = 4;
+            style.paddingBottom = 4;
+            style.paddingLeft = 8;
+            style.paddingRight = 8;
+            style.marginTop = 0;
+            style.marginBottom = 0;
             style.color = Color.white;
             style.unityTextAlign = TextAnchor.MiddleLeft;
+            style.fontSize = 12;
+            style.height = 22;
 
             // Hover effect
             RegisterCallback<MouseEnterEvent>(evt =>

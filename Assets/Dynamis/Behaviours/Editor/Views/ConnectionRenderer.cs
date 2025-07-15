@@ -107,15 +107,12 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private static void DrawArrow(Painter2D painter, Vector2 direction, Vector2 endPoint, float arrowSize, Color color, float lineWidth)
         {
-            // 计算箭头方向
-            Vector2 perpendicular = new Vector2(-direction.y, direction.x);
+            var perpendicular = new Vector2(-direction.y, direction.x);
             
-            // 计算箭头的三个点
-            Vector2 arrowTip = endPoint;
-            Vector2 arrowLeft = endPoint - direction * arrowSize + perpendicular * (arrowSize * 0.5f);
-            Vector2 arrowRight = endPoint - direction * arrowSize - perpendicular * (arrowSize * 0.5f);
+            var arrowTip = endPoint;
+            var arrowLeft = endPoint - direction * arrowSize + perpendicular * (arrowSize * 0.5f);
+            var arrowRight = endPoint - direction * arrowSize - perpendicular * (arrowSize * 0.5f);
             
-            // 绘制箭头
             painter.fillColor = color;
             painter.BeginPath();
             painter.MoveTo(arrowTip);
