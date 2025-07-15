@@ -183,14 +183,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 }
             }
             
-            // foreach (var child in _contentContainer.Children())
-            // {
-            //     if (child is BehaviourNode node && node.ContainsPoint(localPosition))
-            //     {
-            //         return node;
-            //     }
-            // }
-            
             return null;
         }
         

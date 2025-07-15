@@ -111,10 +111,10 @@ namespace Dynamis.Behaviours.Editor.Views
             style.minWidth = 150;
             style.maxWidth = 300;
             style.maxHeight = 400;
-            style.paddingTop = 0;
-            style.paddingBottom = 6;
-            style.paddingLeft = 4;
-            style.paddingRight = 4;
+            // style.paddingTop = 0;
+            // style.paddingBottom = 6;
+            // style.paddingLeft = 4;
+            // style.paddingRight = 4;
 
             // Container styles
             _container.style.paddingTop = 0;
@@ -211,12 +211,14 @@ namespace Dynamis.Behaviours.Editor.Views
             var itemElement = CreateMenuItemElement(item, indentLevel);
             _itemsContainer.Add(itemElement);
 
-            if (item.IsGroup && item.IsExpanded && item.Children != null)
+            if (!item.IsGroup || !item.IsExpanded || item.Children == null)
             {
-                foreach (var child in item.Children)
-                {
-                    AddItemToContainer(child, indentLevel + 1);
-                }
+                return;
+            }
+            
+            foreach (var child in item.Children)
+            {
+                AddItemToContainer(child, indentLevel + 1);
             }
         }
 
