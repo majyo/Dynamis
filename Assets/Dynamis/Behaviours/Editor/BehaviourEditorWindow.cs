@@ -10,7 +10,7 @@ namespace Dynamis.Behaviours.Editor
         private Views.BehaviourEditorToolbar toolbar;
         private Views.TwoColumnLayout twoColumnLayout;
         
-        [MenuItem("Window/Dynamis/Behaviour Editor")]
+        [MenuItem("Dynamis/Behaviour Editor")]
         public static void ShowWindow()
         {
             Instance = GetWindow<BehaviourEditorWindow>("Behaviour Editor");
