@@ -2,8 +2,6 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
-using Dynamis.Behaviours.Editor.Manipulators;
-using ContextualMenuManipulator = UnityEngine.UIElements.ContextualMenuManipulator;
 
 namespace Dynamis.Behaviours.Editor.Views
 {
@@ -25,6 +23,10 @@ namespace Dynamis.Behaviours.Editor.Views
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
         private readonly List<NodeConnection> _connections = new();
+        
+        // 右键菜单相关字段
+        private CustomPopupMenu _contextMenu;
+        private Vector2 _lastRightClickPosition;
 
         public NodeCanvasPanel()
         {
@@ -77,12 +79,13 @@ namespace Dynamis.Behaviours.Editor.Views
 
             // 允许焦点，这样可以接收键盘事件
             focusable = true;
-
-            this.AddManipulator(new ContextualMenuManipulator(BuildContextMenu));
         }
 
         private void OnMouseDown(MouseDownEvent evt)
         {
+            // 先隐藏可能存在的右键菜单
+            HideContextMenu();
+            
             switch (evt.button)
             {
                 case 0:
@@ -122,14 +125,20 @@ namespace Dynamis.Behaviours.Editor.Views
             // 检查是否点击在节点上
             var clickedNode = GetNodeAtPosition(evt.localMousePosition);
                 
-            if (clickedNode != null)
+            if (clickedNode == null)
             {
-                // 如果点击在节点上，不显示菜单，继续处理画布拖拽
-                _isCanvasDragging = true;
-                _startMousePosition = evt.localMousePosition;
-                this.CaptureMouse();
+                // 点击在空白区域，显示创建节点菜单
+                _lastRightClickPosition = evt.localMousePosition;
+                ShowContextMenu(evt.localMousePosition);
                 evt.StopPropagation();
+                return;
             }
+                
+            // 如果点击在节点上，不显示菜单，继续处理画布拖拽
+            _isCanvasDragging = true;
+            _startMousePosition = evt.localMousePosition;
+            this.CaptureMouse();
+            evt.StopPropagation();
         }
 
         private void OnMouseMove(MouseMoveEvent evt)
@@ -357,44 +366,81 @@ namespace Dynamis.Behaviours.Editor.Views
             return _hoveredNode;
         }
 
-        private void BuildContextMenu(ContextualMenuPopulateEvent evt)
+        // 右键菜单相关方法
+        private void ShowContextMenu(Vector2 localPosition)
         {
-            var localPosition = evt.localMousePosition;
+            // 创建上下文菜单
+            if (_contextMenu == null)
+            {
+                _contextMenu = new CustomPopupMenu
+                {
+                    TitleContent = "创建节点"
+                };
+                SetupContextMenuItems();
+                Add(_contextMenu);
+            }
             
-            // 控制节点组
-            evt.menu.AppendAction("控制节点/Root", _ => CreateNode("Root", "Behaviour tree root node", false, true, localPosition));
-            evt.menu.AppendAction("控制节点/Selector", _ => CreateNode("Selector", "Select first successful child", true, true, localPosition));
-            evt.menu.AppendAction("控制节点/Sequence", _ => CreateNode("Sequence", "Execute children in order", true, true, localPosition));
-            evt.menu.AppendAction("控制节点/Parallel", _ => CreateNode("Parallel", "Execute children in parallel", true, true, localPosition));
+            // 清空并重新设置菜单项
+            _contextMenu.ClearItems();
+            SetupContextMenuItems();
             
-            evt.menu.AppendSeparator();
+            // 设置菜单位置
+            _contextMenu.style.left = localPosition.x;
+            _contextMenu.style.top = localPosition.y;
             
-            // 条件节点组
-            evt.menu.AppendAction("条件节点/Check Health", _ => CreateNode("Check Health", "Check if health is above threshold", true, true, localPosition));
-            evt.menu.AppendAction("条件节点/Has Target", _ => CreateNode("Has Target", "Check if target exists", true, true, localPosition));
-            evt.menu.AppendAction("条件节点/In Range", _ => CreateNode("In Range", "Check if target is in range", true, true, localPosition));
-            
-            evt.menu.AppendSeparator();
-            
-            // 行为节点组
-            evt.menu.AppendAction("行为节点/Move To Target", _ => CreateNode("Move To Target", "Move character to target position", true, false, localPosition));
-            evt.menu.AppendAction("行为节点/Attack Enemy", _ => CreateNode("Attack Enemy", "Perform attack on enemy target", true, false, localPosition));
-            evt.menu.AppendAction("行为节点/Patrol", _ => CreateNode("Patrol", "Patrol between waypoints", true, false, localPosition));
-            evt.menu.AppendAction("行为节点/Wait", _ => CreateNode("Wait", "Wait for specified duration", true, false, localPosition));
-            evt.menu.AppendAction("行为节点/Play Animation", _ => CreateNode("Play Animation", "Play character animation", true, false, localPosition));
-            
-            evt.menu.AppendSeparator();
-            
-            // 装饰器节点组
-            evt.menu.AppendAction("装饰器节点/Inverter", _ => CreateNode("Inverter", "Invert child result", true, true, localPosition));
-            evt.menu.AppendAction("装饰器节点/Repeater", _ => CreateNode("Repeater", "Repeat child execution", true, true, localPosition));
-            evt.menu.AppendAction("装饰器节点/Cooldown", _ => CreateNode("Cooldown", "Add cooldown to child", true, true, localPosition));
+            // 显示菜单
+            _contextMenu.Show(localPosition);
+            _contextMenu.BringToFront();
         }
         
-        private void CreateNode(string nodeName, string description, bool hasInput, bool hasOutput, Vector2 mousePosition)
+        private void HideContextMenu()
+        {
+            if (_contextMenu is { IsVisible: true })
+            {
+                _contextMenu.Hide();
+            }
+        }
+        
+        private void SetupContextMenuItems()
+        {
+            // 控制节点组
+            var controlGroup = _contextMenu.AddGroup("控制节点", true);
+            controlGroup.AddChild("Root", () => CreateNode("Root", "Behaviour tree root node", false, true));
+            controlGroup.AddChild("Selector", () => CreateNode("Selector", "Select first successful child", true, true));
+            controlGroup.AddChild("Sequence", () => CreateNode("Sequence", "Execute children in order", true, true));
+            controlGroup.AddChild("Parallel", () => CreateNode("Parallel", "Execute children in parallel", true, true));
+            
+            _contextMenu.AddSeparator();
+            
+            // 条件节点组
+            var conditionGroup = _contextMenu.AddGroup("条件节点", true);
+            conditionGroup.AddChild("Check Health", () => CreateNode("Check Health", "Check if health is above threshold", true, true));
+            conditionGroup.AddChild("Has Target", () => CreateNode("Has Target", "Check if target exists", true, true));
+            conditionGroup.AddChild("In Range", () => CreateNode("In Range", "Check if target is in range", true, true));
+            
+            _contextMenu.AddSeparator();
+            
+            // 行为节点组
+            var actionGroup = _contextMenu.AddGroup("行为节点", true);
+            actionGroup.AddChild("Move To Target", () => CreateNode("Move To Target", "Move character to target position", true, false));
+            actionGroup.AddChild("Attack Enemy", () => CreateNode("Attack Enemy", "Perform attack on enemy target", true, false));
+            actionGroup.AddChild("Patrol", () => CreateNode("Patrol", "Patrol between waypoints", true, false));
+            actionGroup.AddChild("Wait", () => CreateNode("Wait", "Wait for specified duration", true, false));
+            actionGroup.AddChild("Play Animation", () => CreateNode("Play Animation", "Play character animation", true, false));
+            
+            _contextMenu.AddSeparator();
+            
+            // 装饰器节点组
+            var decoratorGroup = _contextMenu.AddGroup("装饰器节点", false);
+            decoratorGroup.AddChild("Inverter", () => CreateNode("Inverter", "Invert child result", true, true));
+            decoratorGroup.AddChild("Repeater", () => CreateNode("Repeater", "Repeat child execution", true, true));
+            decoratorGroup.AddChild("Cooldown", () => CreateNode("Cooldown", "Add cooldown to child", true, true));
+        }
+        
+        private void CreateNode(string nodeName, string description, bool hasInput, bool hasOutput)
         {
             // 转换右键点击位置到画布坐标
-            var canvasPosition = mousePosition - _canvasOffset;
+            var canvasPosition = _lastRightClickPosition - _canvasOffset;
             
             // 创建新节点
             var newNode = new BehaviourNode(nodeName, description, hasInput, hasOutput);
@@ -402,6 +448,9 @@ namespace Dynamis.Behaviours.Editor.Views
             
             // 选中新创建的节点
             SetSelectedNode(newNode);
+            
+            // 隐藏菜单
+            HideContextMenu();
         }
     }
 }
