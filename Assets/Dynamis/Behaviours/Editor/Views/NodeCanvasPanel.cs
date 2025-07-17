@@ -23,6 +23,10 @@ namespace Dynamis.Behaviours.Editor.Views
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
         private readonly List<NodeConnection> _connections = new();
+        
+        // 右键菜单相关字段
+        private CustomPopupMenu _contextMenu;
+        private Vector2 _lastRightClickPosition;
 
         public NodeCanvasPanel()
         {
@@ -81,6 +85,25 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void OnMouseDown(MouseDownEvent evt)
         {
+            // 先隐藏可能存在的右键菜单
+            HideContextMenu();
+            
+            // 处理右键点击 - 显示上下文菜单
+            if (evt.button == 1) // 右键
+            {
+                // 检查是否点击在节点上
+                var clickedNode = GetNodeAtPosition(evt.localMousePosition);
+                if (clickedNode == null)
+                {
+                    // 点击在空白区域，显示创建节点菜单
+                    _lastRightClickPosition = evt.localMousePosition;
+                    ShowContextMenu(evt.localMousePosition);
+                    evt.StopPropagation();
+                    return;
+                }
+                // 如果点击在节点上，不显示菜单，继续处理画布拖拽
+            }
+            
             // 优先处理节点拖拽和选择（左键）
             if (evt.button == 0)
             {
@@ -435,6 +458,93 @@ namespace Dynamis.Behaviours.Editor.Views
         public BehaviourNode GetHoveredNode()
         {
             return _hoveredNode;
+        }
+
+        // 右键菜单相关方法
+        private void ShowContextMenu(Vector2 screenPosition)
+        {
+            // 创建上下文菜单
+            if (_contextMenu == null)
+            {
+                _contextMenu = new CustomPopupMenu
+                {
+                    TitleContent = "创建节点"
+                };
+                SetupContextMenuItems();
+                Add(_contextMenu);
+            }
+            
+            // 清空并重新设置菜单项
+            _contextMenu.ClearItems();
+            SetupContextMenuItems();
+            
+            // 设置菜单位置
+            _contextMenu.style.left = screenPosition.x;
+            _contextMenu.style.top = screenPosition.y;
+            
+            // 显示菜单
+            _contextMenu.Show(screenPosition);
+            _contextMenu.BringToFront();
+        }
+        
+        private void HideContextMenu()
+        {
+            if (_contextMenu != null && _contextMenu.IsVisible)
+            {
+                _contextMenu.Hide();
+            }
+        }
+        
+        private void SetupContextMenuItems()
+        {
+            // 控制节点组
+            var controlGroup = _contextMenu.AddGroup("控制节点", true);
+            controlGroup.AddChild("Root", () => CreateNode("Root", "Behaviour tree root node", false, true));
+            controlGroup.AddChild("Selector", () => CreateNode("Selector", "Select first successful child", true, true));
+            controlGroup.AddChild("Sequence", () => CreateNode("Sequence", "Execute children in order", true, true));
+            controlGroup.AddChild("Parallel", () => CreateNode("Parallel", "Execute children in parallel", true, true));
+            
+            _contextMenu.AddSeparator();
+            
+            // 条件节点组
+            var conditionGroup = _contextMenu.AddGroup("条件节点", true);
+            conditionGroup.AddChild("Check Health", () => CreateNode("Check Health", "Check if health is above threshold", true, true));
+            conditionGroup.AddChild("Has Target", () => CreateNode("Has Target", "Check if target exists", true, true));
+            conditionGroup.AddChild("In Range", () => CreateNode("In Range", "Check if target is in range", true, true));
+            
+            _contextMenu.AddSeparator();
+            
+            // 行为节点组
+            var actionGroup = _contextMenu.AddGroup("行为节点", true);
+            actionGroup.AddChild("Move To Target", () => CreateNode("Move To Target", "Move character to target position", true, false));
+            actionGroup.AddChild("Attack Enemy", () => CreateNode("Attack Enemy", "Perform attack on enemy target", true, false));
+            actionGroup.AddChild("Patrol", () => CreateNode("Patrol", "Patrol between waypoints", true, false));
+            actionGroup.AddChild("Wait", () => CreateNode("Wait", "Wait for specified duration", true, false));
+            actionGroup.AddChild("Play Animation", () => CreateNode("Play Animation", "Play character animation", true, false));
+            
+            _contextMenu.AddSeparator();
+            
+            // 装饰器节点组
+            var decoratorGroup = _contextMenu.AddGroup("装饰器节点", false);
+            decoratorGroup.AddChild("Inverter", () => CreateNode("Inverter", "Invert child result", true, true));
+            decoratorGroup.AddChild("Repeater", () => CreateNode("Repeater", "Repeat child execution", true, true));
+            decoratorGroup.AddChild("Cooldown", () => CreateNode("Cooldown", "Add cooldown to child", true, true));
+        }
+        
+        private void CreateNode(string nodeName, string description, bool hasInput, bool hasOutput)
+        {
+            // 转换右键点击位置到画布坐标
+            var canvasPosition = _lastRightClickPosition - _canvasOffset;
+            
+            // 创建新节点
+            var newNode = new BehaviourNode(nodeName, description, hasInput, hasOutput);
+            AddNode(newNode, canvasPosition);
+            
+            // 选中新创建的节点
+            SetSelectedNode(newNode);
+            
+            // 隐藏菜单
+            HideContextMenu();
         }
     }
 }
