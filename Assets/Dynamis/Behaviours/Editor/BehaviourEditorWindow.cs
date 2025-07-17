@@ -44,11 +44,14 @@ namespace Dynamis.Behaviours.Editor
         private void SetupNodeCanvas()
         {
             var rightContent = _twoColumnLayout.RightContent;
-            if (rightContent != null)
+            
+            if (rightContent == null)
             {
-                var nodeCanvas = new Views.NodeCanvasPanel();
-                rightContent.Add(nodeCanvas);
+                return;
             }
+            
+            var nodeCanvas = new NodeCanvasPanel();
+            rightContent.Add(nodeCanvas);
         }
     }
 }

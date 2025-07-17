@@ -233,25 +233,6 @@ namespace Dynamis.Behaviours.Editor.Views
             
             _contentContainer.Add(node);
         }
-        
-        // 统一的节点事件绑定方法
-        private void BindNodeEvents(BehaviourNode node)
-        {
-            // 绑定port点击事件
-            if (node.InputPort != null)
-            {
-                node.InputPort.onPortClicked = OnPortClicked;
-            }
-            
-            if (node.OutputPort != null)
-            {
-                node.OutputPort.onPortClicked = OnPortClicked;
-            }
-            
-            // 未来可以在这里添加更多事件绑定
-            // node.onRightClick = OnNodeRightClick;
-            // node.onDoubleClick = OnNodeDoubleClick;
-        }
 
         public void AddConnection(NodeConnection connection)
         {
@@ -269,7 +250,20 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             _connectionRenderer.RefreshConnections();
         }
-
+        
+        private void BindNodeEvents(BehaviourNode node)
+        {
+            if (node.InputPort != null)
+            {
+                node.InputPort.onPortClicked = OnPortClicked;
+            }
+            
+            if (node.OutputPort != null)
+            {
+                node.OutputPort.onPortClicked = OnPortClicked;
+            }
+        }
+        
         private void AddSampleNodes()
         {
             // 创建几个示例节点来展示效果
