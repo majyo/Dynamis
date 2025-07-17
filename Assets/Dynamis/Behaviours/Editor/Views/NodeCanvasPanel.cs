@@ -24,6 +24,11 @@ namespace Dynamis.Behaviours.Editor.Views
         private ConnectionRenderer _connectionRenderer;
         private readonly List<NodeConnection> _connections = new();
         
+        // 悬浮连线相关字段
+        private bool _isDraggingConnection;
+        private Port _draggingFromPort;
+        private Vector2 _currentMousePosition;
+        
         // 右键菜单相关字段
         private CustomPopupMenu _contextMenu;
         private Vector2 _lastRightClickPosition;
@@ -175,6 +180,15 @@ namespace Dynamis.Behaviours.Editor.Views
 
                 evt.StopPropagation();
             }
+
+            // 处理连线拖拽
+            if (_isDraggingConnection)
+            {
+                _currentMousePosition = evt.localMousePosition;
+                // 更新悬浮连线的结束位置
+                _connectionRenderer.UpdateDragConnection(_currentMousePosition);
+                evt.StopPropagation();
+            }
         }
 
         private void OnMouseUp(MouseUpEvent evt)
@@ -193,6 +207,26 @@ namespace Dynamis.Behaviours.Editor.Views
             if (_isCanvasDragging && (evt.button == 1))
             {
                 _isCanvasDragging = false;
+                this.ReleaseMouse();
+                evt.StopPropagation();
+            }
+
+            // 处理连线拖拽结束
+            if (_isDraggingConnection && evt.button == 0)
+            {
+                // 尝试创建连线
+                var targetPort = GetPortAtPosition(evt.localMousePosition);
+                if (targetPort != null && targetPort != _draggingFromPort && targetPort.Type == PortType.Input)
+                {
+                    // 只能连接到输入端口，且不能连接到自己
+                    var newConnection = new NodeConnection(_draggingFromPort, targetPort);
+                    AddConnection(newConnection);
+                }
+
+                // 重置连线拖拽状态
+                _isDraggingConnection = false;
+                _draggingFromPort = null;
+                _connectionRenderer.ClearDragConnection();
                 this.ReleaseMouse();
                 evt.StopPropagation();
             }
@@ -249,7 +283,44 @@ namespace Dynamis.Behaviours.Editor.Views
             return null;
         }
 
-        // 优化：为新添加的节点自动绑定事件
+        // 获取指定位置的端口
+        private Port GetPortAtPosition(Vector2 mousePosition)
+        {
+            // 转换鼠标位置到内容容器的本地坐标
+            var localPosition = mousePosition - _canvasOffset;
+
+            // 遍历所有节点，检查端口
+            for (var i = _contentContainer.childCount - 1; i >= 0; i--)
+            {
+                var child = _contentContainer[i];
+
+                if (child is BehaviourNode node)
+                {
+                    // 检查输入端口
+                    if (node.InputPort != null && IsPointInPort(node.InputPort, localPosition))
+                    {
+                        return node.InputPort;
+                    }
+
+                    // 检查输出端口
+                    if (node.OutputPort != null && IsPointInPort(node.OutputPort, localPosition))
+                    {
+                        return node.OutputPort;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsPointInPort(Port port, Vector2 position)
+        {
+            var portWorldPos = port.GetConnectionPoint();
+            var portRect = new Rect(portWorldPos.x - 8, portWorldPos.y - 8, 16, 16);
+            return portRect.Contains(position);
+        }
+
+        // 优化：为新添加的节点自动绑定事���
         public void AddNode(BehaviourNode node, Vector2 position)
         {
             node.CanvasPosition = position;
@@ -298,12 +369,23 @@ namespace Dynamis.Behaviours.Editor.Views
                 // Alt+点击port，删除该port相关的所有连线
                 RemovePortConnections(port);
             }
+            else if (port.Type == PortType.Output)
+            {
+                // 只有输出端口才能开始拖拽连线
+                _draggingFromPort = port;
+                _isDraggingConnection = true;
+                _currentMousePosition = port.GetConnectionPoint();
+                
+                // 设置悬浮连线的起始和结束点
+                _connectionRenderer.SetDragConnection(_draggingFromPort, _currentMousePosition);
+                this.CaptureMouse();
+            }
         }
 
         // 删除指定port的所有连线
         private void RemovePortConnections(Port port)
         {
-            // 查找所有与该port相关的连线
+            // 查找所有与该port相���的连线
             var connectionsToRemove = _connections
                 .Where(connection => connection.OutputPort == port || connection.InputPort == port)
                 .ToList();
@@ -404,31 +486,31 @@ namespace Dynamis.Behaviours.Editor.Views
         private void SetupContextMenuItems()
         {
             // 控制节点组
-            var controlGroup = _contextMenu.AddGroup("控制节点", true);
+            var controlGroup = _contextMenu.AddGroup("控制节点", false);
             controlGroup.AddChild("Root", () => CreateNode("Root", "Behaviour tree root node", false, true));
             controlGroup.AddChild("Selector", () => CreateNode("Selector", "Select first successful child", true, true));
             controlGroup.AddChild("Sequence", () => CreateNode("Sequence", "Execute children in order", true, true));
             controlGroup.AddChild("Parallel", () => CreateNode("Parallel", "Execute children in parallel", true, true));
             
-            _contextMenu.AddSeparator();
+            // _contextMenu.AddSeparator();
             
             // 条件节点组
-            var conditionGroup = _contextMenu.AddGroup("条件节点", true);
+            var conditionGroup = _contextMenu.AddGroup("条件节点", false);
             conditionGroup.AddChild("Check Health", () => CreateNode("Check Health", "Check if health is above threshold", true, true));
             conditionGroup.AddChild("Has Target", () => CreateNode("Has Target", "Check if target exists", true, true));
             conditionGroup.AddChild("In Range", () => CreateNode("In Range", "Check if target is in range", true, true));
             
-            _contextMenu.AddSeparator();
+            // _contextMenu.AddSeparator();
             
             // 行为节点组
-            var actionGroup = _contextMenu.AddGroup("行为节点", true);
+            var actionGroup = _contextMenu.AddGroup("行为节点", false);
             actionGroup.AddChild("Move To Target", () => CreateNode("Move To Target", "Move character to target position", true, false));
             actionGroup.AddChild("Attack Enemy", () => CreateNode("Attack Enemy", "Perform attack on enemy target", true, false));
             actionGroup.AddChild("Patrol", () => CreateNode("Patrol", "Patrol between waypoints", true, false));
             actionGroup.AddChild("Wait", () => CreateNode("Wait", "Wait for specified duration", true, false));
             actionGroup.AddChild("Play Animation", () => CreateNode("Play Animation", "Play character animation", true, false));
             
-            _contextMenu.AddSeparator();
+            // _contextMenu.AddSeparator();
             
             // 装饰器节点组
             var decoratorGroup = _contextMenu.AddGroup("装饰器节点", false);

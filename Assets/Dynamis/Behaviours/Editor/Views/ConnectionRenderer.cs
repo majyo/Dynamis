@@ -8,6 +8,11 @@ namespace Dynamis.Behaviours.Editor.Views
     {
         private readonly List<NodeConnection> _connections = new();
         
+        // 悬浮连线相关字段
+        private bool _isDraggingConnection;
+        private Port _dragFromPort;
+        private Vector2 _dragEndPosition;
+        
         public ConnectionRenderer()
         {
             name = "connection-renderer";
@@ -24,6 +29,30 @@ namespace Dynamis.Behaviours.Editor.Views
             
             // 注册绘制回调
             generateVisualContent += OnGenerateVisualContent;
+        }
+        
+        public void SetDragConnection(Port fromPort, Vector2 endPosition)
+        {
+            _isDraggingConnection = true;
+            _dragFromPort = fromPort;
+            _dragEndPosition = endPosition;
+            MarkDirtyRepaint();
+        }
+        
+        public void UpdateDragConnection(Vector2 endPosition)
+        {
+            if (_isDraggingConnection)
+            {
+                _dragEndPosition = endPosition;
+                MarkDirtyRepaint();
+            }
+        }
+        
+        public void ClearDragConnection()
+        {
+            _isDraggingConnection = false;
+            _dragFromPort = null;
+            MarkDirtyRepaint();
         }
         
         public void AddConnection(NodeConnection connection)
@@ -51,15 +80,35 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnGenerateVisualContent(MeshGenerationContext context)
         {
-            if (_connections.Count == 0)
-                return;
-                
             var painter = context.painter2D;
             
+            // 绘制已有的连线
             foreach (var connection in _connections)
             {
                 DrawConnection(painter, connection);
             }
+            
+            // 绘制悬浮中的连线
+            if (_isDraggingConnection && _dragFromPort != null)
+            {
+                DrawDragConnection(painter, _dragFromPort.GetConnectionPoint(), _dragEndPosition);
+            }
+        }
+        
+        private void DrawDragConnection(Painter2D painter, Vector2 startPoint, Vector2 endPoint)
+        {
+            var color = new Color(0.3f, 0.8f, 0.3f, 0.8f); // 半透明绿色
+            var lineWidth = 2f;
+            
+            // 计算贝塞尔曲线的切线长度
+            var distance = Vector2.Distance(startPoint, endPoint);
+            var tangentLength = Mathf.Max(30f, distance * 0.3f);
+            
+            // 计算切线点
+            var startTangent = startPoint + Vector2.up * tangentLength;
+            var endTangent = endPoint + Vector2.down * tangentLength;
+            
+            DrawBezierCurve(painter, startPoint, endPoint, startTangent, endTangent, color, lineWidth);
         }
         
         private static void DrawConnection(Painter2D painter, NodeConnection connection)
