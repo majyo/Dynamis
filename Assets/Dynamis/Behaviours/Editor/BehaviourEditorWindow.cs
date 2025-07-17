@@ -1,5 +1,6 @@
 ﻿using UnityEditor;
 using UnityEngine;
+using Dynamis.Behaviours.Editor.Views;
 
 namespace Dynamis.Behaviours.Editor
 {
@@ -7,8 +8,8 @@ namespace Dynamis.Behaviours.Editor
     {
         public static BehaviourEditorWindow Instance { get; private set; }
         
-        private Views.BehaviourEditorToolbar toolbar;
-        private Views.TwoColumnLayout twoColumnLayout;
+        private BehaviourEditorToolbar _toolbar;
+        private TwoColumnLayout _twoColumnLayout;
         
         [MenuItem("Dynamis/Behaviour Editor")]
         public static void ShowWindow()
@@ -23,18 +24,18 @@ namespace Dynamis.Behaviours.Editor
             root.style.flexGrow = 1;
             
             // 首先添加工具栏作为第一个元素
-            toolbar = new Views.BehaviourEditorToolbar();
-            root.Add(toolbar);
+            _toolbar = new Views.BehaviourEditorToolbar();
+            root.Add(_toolbar);
             
             // 然后添加两列布局
-            twoColumnLayout = new Views.TwoColumnLayout
+            _twoColumnLayout = new Views.TwoColumnLayout
             {
                 style =
                 {
                     flexGrow = 1
                 }
             };
-            root.Add(twoColumnLayout);
+            root.Add(_twoColumnLayout);
             
             // 添加节点画布面板到右侧面板
             SetupNodeCanvas();
@@ -42,7 +43,7 @@ namespace Dynamis.Behaviours.Editor
         
         private void SetupNodeCanvas()
         {
-            var rightContent = twoColumnLayout.RightContent;
+            var rightContent = _twoColumnLayout.RightContent;
             if (rightContent != null)
             {
                 var nodeCanvas = new Views.NodeCanvasPanel();

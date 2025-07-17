@@ -11,6 +11,8 @@ namespace Dynamis.Behaviours.Editor
         
         private CustomPopupMenu _popupMenu;
         private VisualElement _rootElement;
+        private SelectionBox _selectionBox;
+        private bool _isDragging;
         
         [MenuItem("Dynamis/Sandbox")]
         public static void ShowWindow()
@@ -38,7 +40,7 @@ namespace Dynamis.Behaviours.Editor
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
             mainContainer.Add(label);
             
-            var instructionLabel = new Label("• 右键显示菜单\n• 点击菜单外任意地方隐藏菜单\n• 选择菜单项执行操作");
+            var instructionLabel = new Label("• 右键显示菜单\n• 点击菜单外任意地方隐藏菜单\n• 选择菜单项执行操作\n• 左键拖拽绘制框选框");
             instructionLabel.style.fontSize = 12;
             instructionLabel.style.color = Color.gray;
             instructionLabel.style.marginTop = 10;
@@ -49,8 +51,14 @@ namespace Dynamis.Behaviours.Editor
             // 创建弹出菜单
             CreatePopupMenu();
             
+            // 创建框选框
+            CreateSelectionBox();
+            
             // 注册右键事件
             RegisterRightClickHandler(mainContainer);
+            
+            // 注册左键拖拽事件
+            RegisterLeftClickDragHandler(mainContainer);
             
             // 注册点击外部隐藏菜单的事件
             RegisterClickOutsideHandler();
@@ -58,9 +66,11 @@ namespace Dynamis.Behaviours.Editor
         
         private void CreatePopupMenu()
         {
-            _popupMenu = new CustomPopupMenu();
-            _popupMenu.Title = "操作菜单";
-            
+            _popupMenu = new CustomPopupMenu
+            {
+                Title = "操作菜单"
+            };
+
             // 添加基本菜单项
             _popupMenu.AddMenuItem("创建新对象", () => {
                 Debug.Log("创建新对象被点击");
@@ -155,6 +165,12 @@ namespace Dynamis.Behaviours.Editor
             _rootElement.Add(_popupMenu);
         }
         
+        private void CreateSelectionBox()
+        {
+            _selectionBox = new SelectionBox();
+            _rootElement.Add(_selectionBox);
+        }
+        
         private void RegisterRightClickHandler(VisualElement targetElement)
         {
             targetElement.RegisterCallback<MouseDownEvent>(evt =>
@@ -163,11 +179,60 @@ namespace Dynamis.Behaviours.Editor
                 {
                     evt.StopPropagation();
                     
-                    // 获取鼠标位置
-                    var mousePosition = evt.mousePosition;
+                    _popupMenu.Show(evt.localMousePosition);
+                }
+            });
+        }
+        
+        private void RegisterLeftClickDragHandler(VisualElement targetElement)
+        {
+            targetElement.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0) // 左键
+                {
+                    // 如果弹出菜单可见，先隐藏它
+                    if (_popupMenu.IsVisible)
+                    {
+                        _popupMenu.Hide();
+                        return;
+                    }
                     
-                    // 显示弹出菜单
-                    _popupMenu.Show(mousePosition);
+                    _isDragging = true;
+                    // 将鼠标位置转换为相对于根容器的坐标
+                    // var localPosition = _rootElement.WorldToLocal(evt.mousePosition + (Vector2)targetElement.worldBound.position);
+                    _selectionBox.StartSelection(evt.localMousePosition);
+                    targetElement.CaptureMouse();
+                    evt.StopPropagation();
+                }
+            });
+            
+            targetElement.RegisterCallback<MouseMoveEvent>(evt =>
+            {
+                if (_isDragging)
+                {
+                    // 将鼠标位置转换为相对于根容器的坐标
+                    // var localPosition = _rootElement.WorldToLocal(evt.mousePosition + (Vector2)targetElement.worldBound.position);
+                    // _selectionBox.UpdateSelection(localPosition);
+                    _selectionBox.UpdateSelection(evt.localMousePosition);
+                    evt.StopPropagation();
+                }
+            });
+            
+            targetElement.RegisterCallback<MouseUpEvent>(evt =>
+            {
+                if (evt.button == 0 && _isDragging) // 左键释放
+                {
+                    _isDragging = false;
+                    targetElement.ReleaseMouse();
+                    
+                    var selectionRect = _selectionBox.SelectionRect;
+                    _selectionBox.EndSelection();
+                    
+                    // 这里可以添加框选逻辑
+                    Debug.Log($"框选区域: {selectionRect}");
+                    ShowNotification(new GUIContent($"框选区域: {selectionRect.width:F1} x {selectionRect.height:F1}"));
+                    
+                    evt.StopPropagation();
                 }
             });
         }

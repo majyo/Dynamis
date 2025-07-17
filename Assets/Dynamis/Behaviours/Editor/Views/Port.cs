@@ -90,8 +90,8 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             if (ParentNode != null && parent != null)
             {
-                var localCenter = new Vector2(8, 8); // 端口中心点
-                var nodeLocalCenter = ParentNode.LocalToWorld(localCenter + ParentNode.CanvasPosition);
+                // var localCenter = new Vector2(8, 8); // 端口中心点
+                // var nodeLocalCenter = ParentNode.LocalToWorld(localCenter + ParentNode.CanvasPosition);
                 
                 // 根据端口类型调整位置
                 if (Type == PortType.Input)
