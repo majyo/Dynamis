@@ -222,6 +222,37 @@ namespace Dynamis.Behaviours.Editor.Views
             return null;
         }
 
+        // 优化：为新添加的节点自动绑定事件
+        public void AddNode(BehaviourNode node, Vector2 position)
+        {
+            node.CanvasPosition = position;
+            node.onPositionChanged = RefreshConnections;
+            
+            // 统一的事件绑定方法
+            BindNodeEvents(node);
+            
+            _contentContainer.Add(node);
+        }
+        
+        // 统一的节点事件绑定方法
+        private void BindNodeEvents(BehaviourNode node)
+        {
+            // 绑定port点击事件
+            if (node.InputPort != null)
+            {
+                node.InputPort.onPortClicked = OnPortClicked;
+            }
+            
+            if (node.OutputPort != null)
+            {
+                node.OutputPort.onPortClicked = OnPortClicked;
+            }
+            
+            // 未来可以在这里添加更多事件绑定
+            // node.onRightClick = OnNodeRightClick;
+            // node.onDoubleClick = OnNodeDoubleClick;
+        }
+
         public void AddConnection(NodeConnection connection)
         {
             _connections.Add(connection);
@@ -245,37 +276,25 @@ namespace Dynamis.Behaviours.Editor.Views
 
             // Root节点 - 只有输出端口
             var rootNode = new BehaviourNode("Root", "Behaviour tree root node", false, true);
-            rootNode.CanvasPosition = new Vector2(200, 50);
-            rootNode.onPositionChanged = RefreshConnections; // 绑定位置变化回调
-            _contentContainer.Add(rootNode);
+            AddNode(rootNode, new Vector2(200, 50));
 
             // Selector节点 - 有输入和输出端口
             var selectorNode = new BehaviourNode("Selector", "Select first successful child");
-            selectorNode.CanvasPosition = new Vector2(150, 180);
-            selectorNode.onPositionChanged = RefreshConnections;
-            _contentContainer.Add(selectorNode);
+            AddNode(selectorNode, new Vector2(150, 180));
 
             // Sequence节点 - 有输入和输出端口
             var sequenceNode = new BehaviourNode("Sequence", "Execute children in order");
-            sequenceNode.CanvasPosition = new Vector2(250, 180);
-            sequenceNode.onPositionChanged = RefreshConnections;
-            _contentContainer.Add(sequenceNode);
+            AddNode(sequenceNode, new Vector2(250, 180));
 
             // Action节点 - 只有输入端口
             var actionNode1 = new BehaviourNode("Move To Target", "Move character to target position", true, false);
-            actionNode1.CanvasPosition = new Vector2(100, 310);
-            actionNode1.onPositionChanged = RefreshConnections;
-            _contentContainer.Add(actionNode1);
+            AddNode(actionNode1, new Vector2(100, 310));
 
             var actionNode2 = new BehaviourNode("Attack Enemy", "Perform attack on enemy target", true, false);
-            actionNode2.CanvasPosition = new Vector2(200, 310);
-            actionNode2.onPositionChanged = RefreshConnections;
-            _contentContainer.Add(actionNode2);
+            AddNode(actionNode2, new Vector2(200, 310));
 
             var actionNode3 = new BehaviourNode("Wait", "Wait for specified duration", true, false);
-            actionNode3.CanvasPosition = new Vector2(300, 310);
-            actionNode3.onPositionChanged = RefreshConnections;
-            _contentContainer.Add(actionNode3);
+            AddNode(actionNode3, new Vector2(300, 310));
 
             // 存储节点引用以便创建连线
             _sampleNodes = new Dictionary<string, BehaviourNode>
@@ -287,6 +306,39 @@ namespace Dynamis.Behaviours.Editor.Views
                 ["attackEnemy"] = actionNode2,
                 ["wait"] = actionNode3
             };
+        }
+
+        // 处理port点击事件
+        private void OnPortClicked(Port port, bool isAltPressed)
+        {
+            if (isAltPressed)
+            {
+                // Alt+点击port，删除该port相关的所有连线
+                RemovePortConnections(port);
+            }
+            else
+            {
+                // 普通点击，可以在这里添加其他逻辑，比如创建连线等
+                // 目前暂时不处理
+            }
+        }
+
+        // 删除指定port的所有连线
+        private void RemovePortConnections(Port port)
+        {
+            // 查找所有与该port相关的连线
+            var connectionsToRemove = _connections
+                .Where(connection => connection.OutputPort == port || connection.InputPort == port)
+                .ToList();
+
+            // 删除找到的所有连线
+            foreach (var connection in connectionsToRemove)
+            {
+                RemoveConnection(connection);
+            }
+
+            // 刷新连线显示
+            RefreshConnections();
         }
 
         private Dictionary<string, BehaviourNode> _sampleNodes;
@@ -343,7 +395,6 @@ namespace Dynamis.Behaviours.Editor.Views
             }).ExecuteLater(100); // 延迟100ms执行
         }
 
-        // 设置悬浮节点
         private void SetHoveredNode(BehaviourNode node)
         {
             if (_hoveredNode != node)
@@ -363,7 +414,6 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        // 设置选中节点
         private void SetSelectedNode(BehaviourNode node)
         {
             if (_selectedNode != node)
@@ -383,13 +433,11 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        // 获取当前选中的节点
         public BehaviourNode GetSelectedNode()
         {
             return _selectedNode;
         }
 
-        // 获取当前悬浮的节点
         public BehaviourNode GetHoveredNode()
         {
             return _hoveredNode;

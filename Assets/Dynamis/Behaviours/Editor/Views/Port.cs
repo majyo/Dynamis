@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using System;
 
 namespace Dynamis.Behaviours.Editor.Views
 {
@@ -14,6 +15,9 @@ namespace Dynamis.Behaviours.Editor.Views
         public PortType Type { get; private set; }
         public BehaviourNode ParentNode { get; private set; }
         public Vector2 WorldPosition { get; private set; }
+        
+        // 添加事件回调
+        public Action<Port, bool> onPortClicked;
         
         private VisualElement _portCircle;
         
@@ -79,6 +83,21 @@ namespace Dynamis.Behaviours.Editor.Views
             
             // 注册回调以更新世界位置
             RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+            
+            // 注册鼠标事件
+            RegisterCallback<MouseDownEvent>(OnMouseDown);
+        }
+        
+        private void OnMouseDown(MouseDownEvent evt)
+        {
+            if (evt.button != 0)
+            {
+                return;
+            }
+            
+            var isAltPressed = evt.altKey;
+            onPortClicked?.Invoke(this, isAltPressed);
+            evt.StopPropagation();
         }
         
         private void OnGeometryChanged(GeometryChangedEvent evt)
