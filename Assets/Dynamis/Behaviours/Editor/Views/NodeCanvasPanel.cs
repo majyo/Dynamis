@@ -32,8 +32,6 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             SetupPanel();
             SetupEventHandling();
-            AddSampleNodes();
-            CreateSampleConnections();
         }
 
         private void SetupPanel()
@@ -88,53 +86,59 @@ namespace Dynamis.Behaviours.Editor.Views
             // 先隐藏可能存在的右键菜单
             HideContextMenu();
             
-            // 处理右键点击 - 显示上下文菜单
-            if (evt.button == 1) // 右键
+            switch (evt.button)
             {
-                // 检查是否点击在节点上
-                var clickedNode = GetNodeAtPosition(evt.localMousePosition);
-                if (clickedNode == null)
-                {
-                    // 点击在空白区域，显示创建节点菜单
-                    _lastRightClickPosition = evt.localMousePosition;
-                    ShowContextMenu(evt.localMousePosition);
-                    evt.StopPropagation();
-                    return;
-                }
-                // 如果点击在节点上，不显示菜单，继续处理画布拖拽
+                case 0:
+                    OnLeftMouseDown(evt);
+                    break;
+                case 1:
+                    OnRightMouseDown(evt);
+                    break;
             }
+        }
+
+        // 节点拖拽和选择的处理
+        private void OnLeftMouseDown(MouseDownEvent evt)
+        {
+            // 检查是否点击在节点上
+            var clickedNode = GetNodeAtPosition(evt.localMousePosition);
             
-            // 优先处理节点拖拽和选择（左键）
-            if (evt.button == 0)
+            if (clickedNode != null)
             {
-                // 检查是否点击在节点上
-                var clickedNode = GetNodeAtPosition(evt.localMousePosition);
-                if (clickedNode != null)
-                {
-                    // 处理节点选择
-                    SetSelectedNode(clickedNode);
+                // 处理节点选择
+                SetSelectedNode(clickedNode);
 
-                    _draggingNode = clickedNode;
-                    _draggingNode.StartDragging(evt.mousePosition);
-                    this.CaptureMouse();
-                    evt.StopPropagation();
-                    return;
-                }
-                else
-                {
-                    // 点击空白区域，取消选择
-                    SetSelectedNode(null);
-                }
-            }
-
-            // 处理画布拖拽（中键或右键）
-            if (evt.button == 1 || evt.button == 2) // 中键=1, 右键=2
-            {
-                _isCanvasDragging = true;
-                _startMousePosition = evt.localMousePosition;
+                _draggingNode = clickedNode;
+                _draggingNode.StartDragging(evt.mousePosition);
                 this.CaptureMouse();
                 evt.StopPropagation();
+                return;
             }
+
+            // 点击空白区域，取消选择
+            SetSelectedNode(null);
+        }
+        
+        // 弹出菜单和画布拖拽的处理
+        private void OnRightMouseDown(MouseDownEvent evt)
+        {
+            // 检查是否点击在节点上
+            var clickedNode = GetNodeAtPosition(evt.localMousePosition);
+                
+            if (clickedNode == null)
+            {
+                // 点击在空白区域，显示创建节点菜单
+                _lastRightClickPosition = evt.localMousePosition;
+                ShowContextMenu(evt.localMousePosition);
+                evt.StopPropagation();
+                return;
+            }
+                
+            // 如果点击在节点上，不显示菜单，继续处理画布拖拽
+            _isCanvasDragging = true;
+            _startMousePosition = evt.localMousePosition;
+            this.CaptureMouse();
+            evt.StopPropagation();
         }
 
         private void OnMouseMove(MouseMoveEvent evt)
@@ -186,7 +190,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
 
             // 处理画布拖拽结束
-            if (_isCanvasDragging && (evt.button == 1 || evt.button == 2))
+            if (_isCanvasDragging && (evt.button == 1))
             {
                 _isCanvasDragging = false;
                 this.ReleaseMouse();
@@ -251,7 +255,6 @@ namespace Dynamis.Behaviours.Editor.Views
             node.CanvasPosition = position;
             node.onPositionChanged = RefreshConnections;
             
-            // 统一的事件绑定方法
             BindNodeEvents(node);
             
             _contentContainer.Add(node);
@@ -286,44 +289,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 node.OutputPort.onPortClicked = OnPortClicked;
             }
         }
-        
-        private void AddSampleNodes()
-        {
-            // 创建几个示例节点来展示效果
-
-            // Root节点 - 只有输出端口
-            var rootNode = new BehaviourNode("Root", "Behaviour tree root node", false, true);
-            AddNode(rootNode, new Vector2(200, 50));
-
-            // Selector节点 - 有输入和输出端口
-            var selectorNode = new BehaviourNode("Selector", "Select first successful child");
-            AddNode(selectorNode, new Vector2(150, 180));
-
-            // Sequence节点 - 有输入和输出端口
-            var sequenceNode = new BehaviourNode("Sequence", "Execute children in order");
-            AddNode(sequenceNode, new Vector2(250, 180));
-
-            // Action节点 - 只有输入端口
-            var actionNode1 = new BehaviourNode("Move To Target", "Move character to target position", true, false);
-            AddNode(actionNode1, new Vector2(100, 310));
-
-            var actionNode2 = new BehaviourNode("Attack Enemy", "Perform attack on enemy target", true, false);
-            AddNode(actionNode2, new Vector2(200, 310));
-
-            var actionNode3 = new BehaviourNode("Wait", "Wait for specified duration", true, false);
-            AddNode(actionNode3, new Vector2(300, 310));
-
-            // 存储节点引用以便创建连线
-            _sampleNodes = new Dictionary<string, BehaviourNode>
-            {
-                ["root"] = rootNode,
-                ["selector"] = selectorNode,
-                ["sequence"] = sequenceNode,
-                ["moveToTarget"] = actionNode1,
-                ["attackEnemy"] = actionNode2,
-                ["wait"] = actionNode3
-            };
-        }
 
         // 处理port点击事件
         private void OnPortClicked(Port port, bool isAltPressed)
@@ -332,11 +297,6 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 // Alt+点击port，删除该port相关的所有连线
                 RemovePortConnections(port);
-            }
-            else
-            {
-                // 普通点击，可以在这里添加其他逻辑，比如创建连线等
-                // 目前暂时不处理
             }
         }
 
@@ -356,60 +316,6 @@ namespace Dynamis.Behaviours.Editor.Views
 
             // 刷新连线显示
             RefreshConnections();
-        }
-
-        private Dictionary<string, BehaviourNode> _sampleNodes;
-
-        private void CreateSampleConnections()
-        {
-            // 等待一帧确保节点位置已确定
-            schedule.Execute(() =>
-            {
-                // Root 连接到 Selector
-                var connection1 =
-                    new NodeConnection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
-                    {
-                        ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
-                        LineWidth = 2f
-                    };
-                AddConnection(connection1);
-
-                // Root 连接到 Sequence
-                var connection2 =
-                    new NodeConnection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
-                    {
-                        ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
-                        LineWidth = 2f
-                    };
-                AddConnection(connection2);
-
-                // Selector 连接到 Move To Target
-                var connection3 = new NodeConnection(_sampleNodes["selector"].OutputPort,
-                    _sampleNodes["moveToTarget"].InputPort)
-                {
-                    ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
-                    LineWidth = 2f
-                };
-                AddConnection(connection3);
-
-                // Selector 连接到 Attack Enemy
-                var connection4 = new NodeConnection(_sampleNodes["selector"].OutputPort,
-                    _sampleNodes["attackEnemy"].InputPort)
-                {
-                    ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
-                    LineWidth = 2f
-                };
-                AddConnection(connection4);
-
-                // Sequence 连接到 Wait
-                var connection5 =
-                    new NodeConnection(_sampleNodes["sequence"].OutputPort, _sampleNodes["wait"].InputPort)
-                    {
-                        ConnectionColor = new Color(0.8f, 0.3f, 0.3f, 1f),
-                        LineWidth = 2f
-                    };
-                AddConnection(connection5);
-            }).ExecuteLater(100); // 延迟100ms执行
         }
 
         private void SetHoveredNode(BehaviourNode node)
@@ -461,7 +367,7 @@ namespace Dynamis.Behaviours.Editor.Views
         }
 
         // 右键菜单相关方法
-        private void ShowContextMenu(Vector2 screenPosition)
+        private void ShowContextMenu(Vector2 localPosition)
         {
             // 创建上下文菜单
             if (_contextMenu == null)
@@ -479,17 +385,17 @@ namespace Dynamis.Behaviours.Editor.Views
             SetupContextMenuItems();
             
             // 设置菜单位置
-            _contextMenu.style.left = screenPosition.x;
-            _contextMenu.style.top = screenPosition.y;
+            _contextMenu.style.left = localPosition.x;
+            _contextMenu.style.top = localPosition.y;
             
             // 显示菜单
-            _contextMenu.Show(screenPosition);
+            _contextMenu.Show(localPosition);
             _contextMenu.BringToFront();
         }
         
         private void HideContextMenu()
         {
-            if (_contextMenu != null && _contextMenu.IsVisible)
+            if (_contextMenu is { IsVisible: true })
             {
                 _contextMenu.Hide();
             }
