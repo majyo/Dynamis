@@ -36,6 +36,7 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private EventHandler<NodeCanvasPanel> _nodeEventHandler;
         private EventHandler<NodeCanvasPanel> _dragCanvasHandler;
+        private EventHandler<NodeCanvasPanel> _contextualMenuHandler;
 
         public NodeCanvasPanel()
         {
@@ -172,7 +173,12 @@ namespace Dynamis.Behaviours.Editor.Views
                 Target = this
             };
             
-            _dragCanvasHandler = new DragCanvasHandler
+            _dragCanvasHandler = new CanvasDraggingHandler
+            {
+                Target = this
+            };
+
+            _contextualMenuHandler = new ContextualMenuHandler
             {
                 Target = this
             };
@@ -189,8 +195,6 @@ namespace Dynamis.Behaviours.Editor.Views
 
             // 允许焦点，这样可以接收键盘事件
         }
-
-
 
         private void RemoveNodeConnections(BehaviourNode node)
         {
@@ -280,22 +284,9 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             _connectionRenderer.RefreshConnections();
         }
-        
-        private void BindNodeEvents(BehaviourNode node)
-        {
-            if (node.InputPort != null)
-            {
-                node.InputPort.onPortPressed = OnPortPressed;
-            }
-            
-            if (node.OutputPort != null)
-            {
-                node.OutputPort.onPortPressed = OnPortPressed;
-            }
-        }
 
         // 处理port点击事件
-        private void OnPortPressed(Port port, bool isAltPressed)
+        public void OnPortPressed(Port port, bool isAltPressed)
         {
             if (isAltPressed)
             {
@@ -316,7 +307,7 @@ namespace Dynamis.Behaviours.Editor.Views
         }
 
         // 删除指定port的所有连线
-        private void RemovePortConnections(Port port)
+        public void RemovePortConnections(Port port)
         {
             var connectionsToRemove = _connections
                 .Where(connection => connection.OutputPort == port || connection.InputPort == port)
@@ -333,7 +324,7 @@ namespace Dynamis.Behaviours.Editor.Views
         }
 
         // 右键菜单相关方法
-        private void ShowContextMenu(Vector2 localPosition)
+        public void ShowContextMenu(Vector2 localPosition)
         {
             // 创建上下文菜单
             if (_contextMenu == null)
@@ -359,7 +350,7 @@ namespace Dynamis.Behaviours.Editor.Views
             _contextMenu.BringToFront();
         }
         
-        private void HideContextMenu()
+        public void HideContextMenu()
         {
             if (_contextMenu is { IsVisible: true })
             {
@@ -417,6 +408,19 @@ namespace Dynamis.Behaviours.Editor.Views
             
             // 隐藏菜单
             HideContextMenu();
+        }
+        
+        private void BindNodeEvents(BehaviourNode node)
+        {
+            if (node.InputPort != null)
+            {
+                node.InputPort.onPortPressed = OnPortPressed;
+            }
+            
+            if (node.OutputPort != null)
+            {
+                node.OutputPort.onPortPressed = OnPortPressed;
+            }
         }
     }
 }

@@ -128,7 +128,7 @@ namespace Dynamis.Behaviours.Editor.Views
         }
     }
 
-    public class DragCanvasHandler : EventHandler<NodeCanvasPanel>
+    public class CanvasDraggingHandler : EventHandler<NodeCanvasPanel>
     {
         private const float SqrDragThreshold = 0.05f;
         
@@ -186,8 +186,37 @@ namespace Dynamis.Behaviours.Editor.Views
             if (_dragged)
             {
                 _dragged = false;
+                Debug.Log("Dragged");
                 evt.StopPropagation();
             }
+        }
+    }
+    
+    public class ContextualMenuHandler : EventHandler<NodeCanvasPanel>
+    {
+        protected override void RegisterCallbacks(NodeCanvasPanel target)
+        {
+            target.RegisterCallback<MouseUpEvent>(OnMouseUp);
+        }
+
+        protected override void UnregisterCallbacks(NodeCanvasPanel target)
+        {
+            target.UnregisterCallback<MouseUpEvent>(OnMouseUp);
+        }
+
+        private void OnMouseDown(MouseDownEvent evt)
+        {
+            Target.HideContextMenu();
+        }
+
+        private void OnMouseUp(MouseUpEvent evt)
+        {
+            if (evt.button != 1)
+            {
+                return;
+            }
+            
+            Target.ShowContextMenu(evt.localMousePosition);
         }
     }
 }
