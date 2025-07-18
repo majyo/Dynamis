@@ -56,6 +56,8 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnMouseDown(MouseDownEvent evt)
         {
+            Target.HideContextMenu();
+            
             if (evt.button != 0)
             {
                 return;
@@ -63,6 +65,7 @@ namespace Dynamis.Behaviours.Editor.Views
 
             var hoveredNode = Target.GetNodeAtPosition(evt.localMousePosition);
             Target.SetHoveredNode(hoveredNode);
+            Target.SetSelectedNode(hoveredNode);
             
             if (hoveredNode == null)
             {
@@ -72,7 +75,6 @@ namespace Dynamis.Behaviours.Editor.Views
             _dragRecording = true;
             _draggingNode = hoveredNode;
             _draggingNode.StartDragging(evt.localMousePosition);
-            Target.SetSelectedNode(hoveredNode);
         }
         
         private void OnMouseMove(MouseMoveEvent evt)
@@ -139,7 +141,7 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             target.RegisterCallback<MouseDownEvent>(OnMouseDown);
             target.RegisterCallback<MouseMoveEvent>(OnMouseMove);
-            target.RegisterCallback<MouseUpEvent>(OnMouseUp);
+            target.RegisterCallback<MouseUpEvent>(OnMouseUp, TrickleDown.TrickleDown);
         }
         
         protected override void UnregisterCallbacks(NodeCanvasPanel target)
@@ -186,7 +188,6 @@ namespace Dynamis.Behaviours.Editor.Views
             if (_dragged)
             {
                 _dragged = false;
-                Debug.Log("Dragged");
                 evt.StopPropagation();
             }
         }
