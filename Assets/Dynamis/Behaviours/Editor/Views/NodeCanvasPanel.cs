@@ -8,7 +8,8 @@ namespace Dynamis.Behaviours.Editor.Views
     public class NodeCanvasPanel : VisualElement
     {
         // 画布拖拽相关字段
-        private bool _isCanvasDragging;
+        private bool _draggingRequested;
+        private bool _isDragging;
         private Vector2 _startMousePosition;
         private Vector2 _canvasOffset = Vector2.zero;
         private VisualElement _contentContainer;
@@ -25,9 +26,9 @@ namespace Dynamis.Behaviours.Editor.Views
         private readonly List<Connection> _connections = new();
         
         // 悬浮连线相关字段
-        private bool _isDraggingConnection;
         private Port _draggingFromPort;
-        private Vector2 _currentMousePosition;
+        private DummyPort _draggingToPort;
+        private Connection _draggingConnection;
         
         // 右键菜单相关字段
         private CustomPopupMenu _contextMenu;
@@ -70,6 +71,8 @@ namespace Dynamis.Behaviours.Editor.Views
             // 创建连线渲染器
             _connectionRenderer = new ConnectionRenderer();
             _contentContainer.Add(_connectionRenderer);
+
+            _draggingToPort = new DummyPort();
         }
 
         private void SetupEventHandling()
@@ -129,18 +132,13 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             // 检查是否点击在节点上
             var clickedNode = GetNodeAtPosition(evt.localMousePosition);
-                
-            if (clickedNode == null)
+
+            if (clickedNode != null)
             {
-                // 点击在空白区域，显示创建节点菜单
-                _lastRightClickPosition = evt.localMousePosition;
-                ShowContextMenu(evt.localMousePosition);
-                evt.StopPropagation();
                 return;
             }
                 
-            // 如果点击在节点上，不显示菜单，继续处理画布拖拽
-            _isCanvasDragging = true;
+            _draggingRequested = true;
             _startMousePosition = evt.localMousePosition;
             this.CaptureMouse();
             evt.StopPropagation();
@@ -149,7 +147,7 @@ namespace Dynamis.Behaviours.Editor.Views
         private void OnMouseMove(MouseMoveEvent evt)
         {
             // 处理节点拖拽
-            if (_draggingNode != null && _draggingNode.IsDragging)
+            if (_draggingNode is { IsDragging: true })
             {
                 _draggingNode.UpdateDragging(evt.mousePosition);
                 evt.StopPropagation();
@@ -157,42 +155,49 @@ namespace Dynamis.Behaviours.Editor.Views
             }
 
             // 处理节点悬浮检测（仅在非拖拽状态下）
-            if (!_isCanvasDragging)
+            if (!_draggingRequested)
             {
                 var hoveredNode = GetNodeAtPosition(evt.localMousePosition);
                 SetHoveredNode(hoveredNode);
             }
 
             // 处理画布拖拽
-            if (_isCanvasDragging)
+            if (_draggingRequested)
             {
-                // 计算鼠标移动距离
-                Vector2 mouseDelta = evt.localMousePosition - _startMousePosition;
-
-                // 更新画布偏移
+                var mouseDelta = evt.localMousePosition - _startMousePosition;
                 _canvasOffset += mouseDelta;
-
-                // 应用变换到内容容器
                 _contentContainer.transform.position = _canvasOffset;
-
-                // 更新起始位置
                 _startMousePosition = evt.localMousePosition;
+
+                if (mouseDelta.sqrMagnitude > 0.01f)
+                {
+                    _isDragging = true;
+                    this.CaptureMouse();
+                }
 
                 evt.StopPropagation();
             }
 
             // 处理连线拖拽
-            if (_isDraggingConnection)
+            if (_draggingFromPort != null)
             {
-                _currentMousePosition = evt.localMousePosition;
                 // 更新悬浮连线的结束位置
-                _connectionRenderer.UpdateDragConnection(_currentMousePosition);
+                _draggingToPort.Position = evt.localMousePosition;
+                _connectionRenderer.RefreshConnections();
                 evt.StopPropagation();
             }
         }
 
         private void OnMouseUp(MouseUpEvent evt)
         {
+            if (!_isDragging && evt.button == 1)
+            {
+                // 点击在空白区域，显示创建节点菜单
+                _lastRightClickPosition = evt.localMousePosition;
+                ShowContextMenu(evt.localMousePosition);
+                evt.StopPropagation();
+            }
+            
             // 处理节点拖拽结束
             if (_draggingNode != null && evt.button == 0)
             {
@@ -202,31 +207,32 @@ namespace Dynamis.Behaviours.Editor.Views
                 evt.StopPropagation();
                 return;
             }
-
+            
             // 处理画布拖拽结束
-            if (_isCanvasDragging && (evt.button == 1))
+            _draggingRequested = false;
+            
+            if (_isDragging && evt.button == 1)
             {
-                _isCanvasDragging = false;
+                _isDragging = false;
                 this.ReleaseMouse();
                 evt.StopPropagation();
             }
 
             // 处理连线拖拽结束
-            if (_isDraggingConnection && evt.button == 0)
+            if (_draggingFromPort != null && evt.button == 0)
             {
-                // 尝试创建连线
-                var targetPort = GetPortAtPosition(evt.localMousePosition);
-                if (targetPort != null && targetPort != _draggingFromPort && targetPort.Type == PortType.Input)
-                {
-                    // 只能连接到输入端口，且不能连接到自己
-                    var newConnection = new Connection(_draggingFromPort, targetPort);
-                    AddConnection(newConnection);
-                }
+                // var targetPort = GetPortAtPosition(evt.localMousePosition);
+                // if (targetPort != null && targetPort != _draggingFromPort && targetPort.Type == PortType.Input)
+                // {
+                //     var newConnection = new Connection(_draggingFromPort, targetPort);
+                //     AddConnection(newConnection);
+                // }
 
                 // 重置连线拖拽状态
-                _isDraggingConnection = false;
                 _draggingFromPort = null;
-                _connectionRenderer.ClearDragConnection();
+                _connectionRenderer.RemoveConnection(_draggingConnection);
+                _connectionRenderer.RefreshConnections();
+                // _connectionRenderer.ClearDragConnection();
                 this.ReleaseMouse();
                 evt.StopPropagation();
             }
@@ -332,7 +338,6 @@ namespace Dynamis.Behaviours.Editor.Views
             return portRect.Contains(position);
         }
 
-        // 优化：为新添加的节点自动绑定事���
         public void AddNode(BehaviourNode node, Vector2 position)
         {
             node.CanvasPosition = position;
@@ -364,17 +369,17 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             if (node.InputPort != null)
             {
-                node.InputPort.onPortClicked = OnPortClicked;
+                node.InputPort.onPortPressed = OnPortPressed;
             }
             
             if (node.OutputPort != null)
             {
-                node.OutputPort.onPortClicked = OnPortClicked;
+                node.OutputPort.onPortPressed = OnPortPressed;
             }
         }
 
         // 处理port点击事件
-        private void OnPortClicked(Port port, bool isAltPressed)
+        private void OnPortPressed(Port port, bool isAltPressed)
         {
             if (isAltPressed)
             {
@@ -385,11 +390,11 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 // 只有输出端口才能开始拖拽连线
                 _draggingFromPort = port;
-                _isDraggingConnection = true;
-                _currentMousePosition = port.GetConnectionPoint();
+                _draggingToPort.Position = port.GetConnectionPoint();
+                _draggingConnection = new Connection(_draggingFromPort, _draggingToPort);
+                _connectionRenderer.AddConnection(_draggingConnection);
+                _connectionRenderer.RefreshConnections();
                 
-                // 设置悬浮连线的起始和结束点
-                _connectionRenderer.SetDragConnection(_draggingFromPort, _currentMousePosition);
                 this.CaptureMouse();
             }
         }
@@ -397,7 +402,6 @@ namespace Dynamis.Behaviours.Editor.Views
         // 删除指定port的所有连线
         private void RemovePortConnections(Port port)
         {
-            // 查找所有与该port相���的连线
             var connectionsToRemove = _connections
                 .Where(connection => connection.OutputPort == port || connection.InputPort == port)
                 .ToList();

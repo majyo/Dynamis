@@ -28,7 +28,7 @@ namespace Dynamis.Behaviours.Editor.Views
         }
         
         // 添加事件回调
-        public Action<Port, bool> onPortClicked;
+        public Action<Port, bool> onPortPressed;
         
         public Port(PortType type, BehaviourNode parentNode)
         {
@@ -105,7 +105,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
             
             var isAltPressed = evt.altKey;
-            onPortClicked?.Invoke(this, isAltPressed);
+            onPortPressed?.Invoke(this, isAltPressed);
             evt.StopPropagation();
         }
         

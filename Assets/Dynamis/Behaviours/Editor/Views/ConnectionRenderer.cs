@@ -8,10 +8,9 @@ namespace Dynamis.Behaviours.Editor.Views
     {
         private readonly List<Connection> _connections = new();
         
-        // 悬浮连线相关字段
-        private bool _isDraggingConnection;
-        private Port _dragFromPort;
-        private Vector2 _dragEndPosition;
+        // private bool _isDraggingConnection;
+        // private Port _dragFromPort;
+        // private Vector2 _dragEndPosition;
         
         public ConnectionRenderer()
         {
@@ -31,29 +30,29 @@ namespace Dynamis.Behaviours.Editor.Views
             generateVisualContent += OnGenerateVisualContent;
         }
         
-        public void SetDragConnection(Port fromPort, Vector2 endPosition)
-        {
-            _isDraggingConnection = true;
-            _dragFromPort = fromPort;
-            _dragEndPosition = endPosition;
-            MarkDirtyRepaint();
-        }
-        
-        public void UpdateDragConnection(Vector2 endPosition)
-        {
-            if (_isDraggingConnection)
-            {
-                _dragEndPosition = endPosition;
-                MarkDirtyRepaint();
-            }
-        }
-        
-        public void ClearDragConnection()
-        {
-            _isDraggingConnection = false;
-            _dragFromPort = null;
-            MarkDirtyRepaint();
-        }
+        // public void SetDragConnection(Port fromPort, Vector2 endPosition)
+        // {
+        //     _isDraggingConnection = true;
+        //     _dragFromPort = fromPort;
+        //     _dragEndPosition = endPosition;
+        //     MarkDirtyRepaint();
+        // }
+        //
+        // public void UpdateDragConnection(Vector2 endPosition)
+        // {
+        //     if (_isDraggingConnection)
+        //     {
+        //         _dragEndPosition = endPosition;
+        //         MarkDirtyRepaint();
+        //     }
+        // }
+        //
+        // public void ClearDragConnection()
+        // {
+        //     _isDraggingConnection = false;
+        //     _dragFromPort = null;
+        //     MarkDirtyRepaint();
+        // }
         
         public void AddConnection(Connection connection)
         {
@@ -89,32 +88,32 @@ namespace Dynamis.Behaviours.Editor.Views
             }
             
             // 绘制悬浮中的连线
-            if (_isDraggingConnection && _dragFromPort != null)
-            {
-                DrawDragConnection(painter, _dragFromPort.GetConnectionPoint(), _dragEndPosition);
-            }
+            // if (_isDraggingConnection && _dragFromPort != null)
+            // {
+            //     DrawDragConnection(painter, _dragFromPort.GetConnectionPoint(), _dragEndPosition);
+            // }
         }
         
-        private void DrawDragConnection(Painter2D painter, Vector2 startPoint, Vector2 endPoint)
-        {
-            var color = new Color(0.3f, 0.8f, 0.3f, 0.8f); // 半透明绿色
-            var lineWidth = 2f;
-            
-            var arrowDirection = Vector2.up;
-            var arrowSize = Mathf.Max(8f, lineWidth * 2f);
-            DrawArrow(painter, arrowDirection, endPoint, arrowSize, color, lineWidth);
-            endPoint.y -= arrowSize;
-            
-            // 计算贝塞尔曲线的切线长度
-            var distance = Vector2.Distance(startPoint, endPoint);
-            var tangentLength = Mathf.Max(30f, distance * 0.3f);
-            
-            // 计算切线点
-            var startTangent = startPoint + Vector2.up * tangentLength;
-            var endTangent = endPoint + Vector2.down * tangentLength;
-            
-            DrawBezierCurve(painter, startPoint, endPoint, startTangent, endTangent, color, lineWidth);
-        }
+        // private void DrawDragConnection(Painter2D painter, Vector2 startPoint, Vector2 endPoint)
+        // {
+        //     var color = new Color(0.3f, 0.8f, 0.3f, 0.8f); // 半透明绿色
+        //     var lineWidth = 2f;
+        //     
+        //     var arrowDirection = Vector2.up;
+        //     var arrowSize = Mathf.Max(8f, lineWidth * 2f);
+        //     DrawArrow(painter, arrowDirection, endPoint, arrowSize, color, lineWidth);
+        //     endPoint.y -= arrowSize;
+        //     
+        //     // 计算贝塞尔曲线的切线长度
+        //     var distance = Vector2.Distance(startPoint, endPoint);
+        //     var tangentLength = Mathf.Max(30f, distance * 0.3f);
+        //     
+        //     // 计算切线点
+        //     var startTangent = startPoint + Vector2.up * tangentLength;
+        //     var endTangent = endPoint + Vector2.down * tangentLength;
+        //     
+        //     DrawBezierCurve(painter, startPoint, endPoint, startTangent, endTangent, color, lineWidth);
+        // }
         
         private static void DrawConnection(Painter2D painter, Connection connection)
         {
