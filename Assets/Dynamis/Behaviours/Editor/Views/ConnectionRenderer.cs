@@ -6,7 +6,7 @@ namespace Dynamis.Behaviours.Editor.Views
 {
     public class ConnectionRenderer : VisualElement
     {
-        private readonly List<NodeConnection> _connections = new();
+        private readonly List<Connection> _connections = new();
         
         // 悬浮连线相关字段
         private bool _isDraggingConnection;
@@ -55,13 +55,13 @@ namespace Dynamis.Behaviours.Editor.Views
             MarkDirtyRepaint();
         }
         
-        public void AddConnection(NodeConnection connection)
+        public void AddConnection(Connection connection)
         {
             _connections.Add(connection);
             MarkDirtyRepaint();
         }
         
-        public void RemoveConnection(NodeConnection connection)
+        public void RemoveConnection(Connection connection)
         {
             _connections.Remove(connection);
             MarkDirtyRepaint();
@@ -100,6 +100,11 @@ namespace Dynamis.Behaviours.Editor.Views
             var color = new Color(0.3f, 0.8f, 0.3f, 0.8f); // 半透明绿色
             var lineWidth = 2f;
             
+            var arrowDirection = Vector2.up;
+            var arrowSize = Mathf.Max(8f, lineWidth * 2f);
+            DrawArrow(painter, arrowDirection, endPoint, arrowSize, color, lineWidth);
+            endPoint.y -= arrowSize;
+            
             // 计算贝塞尔曲线的切线长度
             var distance = Vector2.Distance(startPoint, endPoint);
             var tangentLength = Mathf.Max(30f, distance * 0.3f);
@@ -111,7 +116,7 @@ namespace Dynamis.Behaviours.Editor.Views
             DrawBezierCurve(painter, startPoint, endPoint, startTangent, endTangent, color, lineWidth);
         }
         
-        private static void DrawConnection(Painter2D painter, NodeConnection connection)
+        private static void DrawConnection(Painter2D painter, Connection connection)
         {
             var startPoint = connection.GetStartPoint();
             var endPoint = connection.GetEndPoint();

@@ -10,16 +10,25 @@ namespace Dynamis.Behaviours.Editor.Views
         Output
     }
     
-    public class Port : VisualElement
+    public class Port : VisualElement, IEndPoint
     {
+        private VisualElement _portCircle;
+        private Vector2 _position;
+        
         public PortType Type { get; private set; }
         public BehaviourNode ParentNode { get; private set; }
-        public Vector2 WorldPosition { get; private set; }
+
+        public Vector2 Position
+        {
+            get
+            {
+                UpdateWorldPosition();
+                return _position;
+            }
+        }
         
         // 添加事件回调
         public Action<Port, bool> onPortClicked;
-        
-        private VisualElement _portCircle;
         
         public Port(PortType type, BehaviourNode parentNode)
         {
@@ -35,7 +44,7 @@ namespace Dynamis.Behaviours.Editor.Views
             // 设置端口容器样式
             style.width = 16;
             style.height = 16;
-            style.position = Position.Absolute;
+            style.position = UnityEngine.UIElements.Position.Absolute;
             
             // 根据类型设置位置 - 上下排布
             if (Type == PortType.Input)
@@ -73,7 +82,7 @@ namespace Dynamis.Behaviours.Editor.Views
                     borderBottomColor = Color.white,
                     borderLeftColor = Color.white,
                     borderRightColor = Color.white,
-                    position = Position.Absolute,
+                    position = UnityEngine.UIElements.Position.Absolute,
                     left = 2,
                     top = 2
                 }
@@ -116,12 +125,12 @@ namespace Dynamis.Behaviours.Editor.Views
                 if (Type == PortType.Input)
                 {
                     // WorldPosition = new Vector2(ParentNode.CanvasPosition.x, ParentNode.CanvasPosition.y + 20);
-                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y - 8);
+                    _position = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y - 8);
                 }
                 else
                 {
                     // WorldPosition = new Vector2(ParentNode.CanvasPosition.x + 180, ParentNode.CanvasPosition.y + 20);
-                    WorldPosition = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y + ParentNode.CanvasSize.y + 8);
+                    _position = new Vector2(ParentNode.CanvasPosition.x + ParentNode.CanvasSize.x * 0.5f, ParentNode.CanvasPosition.y + ParentNode.CanvasSize.y + 8);
                 }
             }
         }
@@ -129,7 +138,7 @@ namespace Dynamis.Behaviours.Editor.Views
         public Vector2 GetConnectionPoint()
         {
             UpdateWorldPosition();
-            return WorldPosition;
+            return Position;
         }
     }
 }

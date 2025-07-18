@@ -27,11 +27,9 @@ namespace Dynamis.Behaviours.Editor
             var root = rootVisualElement;
             root.style.flexGrow = 1;
             
-            // 首先添加工具栏作为第一个元素
             _toolbar = new BehaviourEditorToolbar();
             root.Add(_toolbar);
             
-            // 然后添加两列布局
             _twoColumnLayout = new TwoColumnLayout
             {
                 style =
@@ -41,7 +39,6 @@ namespace Dynamis.Behaviours.Editor
             };
             root.Add(_twoColumnLayout);
             
-            // 添加节点画布面板到右侧面板
             SetupNodeCanvas();
             
             // 添加示例
@@ -107,7 +104,7 @@ namespace Dynamis.Behaviours.Editor
             {
                 // Root 连接到 Selector
                 var connection1 =
-                    new NodeConnection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
+                    new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
                     {
                         ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
                         LineWidth = 2f
@@ -116,7 +113,7 @@ namespace Dynamis.Behaviours.Editor
 
                 // Root 连接到 Sequence
                 var connection2 =
-                    new NodeConnection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
+                    new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
                     {
                         ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
                         LineWidth = 2f
@@ -124,7 +121,7 @@ namespace Dynamis.Behaviours.Editor
                 _nodeCanvasPanel.AddConnection(connection2);
 
                 // Selector 连接到 Move To Target
-                var connection3 = new NodeConnection(_sampleNodes["selector"].OutputPort,
+                var connection3 = new Connection(_sampleNodes["selector"].OutputPort,
                     _sampleNodes["moveToTarget"].InputPort)
                 {
                     ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
@@ -133,7 +130,7 @@ namespace Dynamis.Behaviours.Editor
                 _nodeCanvasPanel.AddConnection(connection3);
 
                 // Selector 连接到 Attack Enemy
-                var connection4 = new NodeConnection(_sampleNodes["selector"].OutputPort,
+                var connection4 = new Connection(_sampleNodes["selector"].OutputPort,
                     _sampleNodes["attackEnemy"].InputPort)
                 {
                     ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
@@ -143,7 +140,7 @@ namespace Dynamis.Behaviours.Editor
 
                 // Sequence 连接到 Wait
                 var connection5 =
-                    new NodeConnection(_sampleNodes["sequence"].OutputPort, _sampleNodes["wait"].InputPort)
+                    new Connection(_sampleNodes["sequence"].OutputPort, _sampleNodes["wait"].InputPort)
                     {
                         ConnectionColor = new Color(0.8f, 0.3f, 0.3f, 1f),
                         LineWidth = 2f

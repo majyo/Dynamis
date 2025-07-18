@@ -22,7 +22,7 @@ namespace Dynamis.Behaviours.Editor.Views
 
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
-        private readonly List<NodeConnection> _connections = new();
+        private readonly List<Connection> _connections = new();
         
         // 悬浮连线相关字段
         private bool _isDraggingConnection;
@@ -219,7 +219,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 if (targetPort != null && targetPort != _draggingFromPort && targetPort.Type == PortType.Input)
                 {
                     // 只能连接到输入端口，且不能连接到自己
-                    var newConnection = new NodeConnection(_draggingFromPort, targetPort);
+                    var newConnection = new Connection(_draggingFromPort, targetPort);
                     AddConnection(newConnection);
                 }
 
@@ -254,7 +254,19 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             var connectionsToRemove = _connections
                 .Where(connection =>
-                    connection.OutputPort.ParentNode == node || connection.InputPort.ParentNode == node)
+                {
+                    if (connection.InputPort is not Port inputPort)
+                    {
+                        return false;
+                    }
+                    
+                    if (connection.OutputPort is not Port outputPort)
+                    {
+                        return false;
+                    }
+                    
+                    return inputPort.ParentNode == node || outputPort.ParentNode == node;
+                })
                 .ToList();
 
             foreach (var connection in connectionsToRemove)
@@ -331,13 +343,13 @@ namespace Dynamis.Behaviours.Editor.Views
             _contentContainer.Add(node);
         }
 
-        public void AddConnection(NodeConnection connection)
+        public void AddConnection(Connection connection)
         {
             _connections.Add(connection);
             _connectionRenderer.AddConnection(connection);
         }
 
-        public void RemoveConnection(NodeConnection connection)
+        public void RemoveConnection(Connection connection)
         {
             _connections.Remove(connection);
             _connectionRenderer.RemoveConnection(connection);
