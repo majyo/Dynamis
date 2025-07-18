@@ -33,11 +33,101 @@ namespace Dynamis.Behaviours.Editor.Views
         // 右键菜单相关字段
         private CustomPopupMenu _contextMenu;
         private Vector2 _lastRightClickPosition;
+        
+        private EventHandler<NodeCanvasPanel> _nodeEventHandler;
+        private EventHandler<NodeCanvasPanel> _dragCanvasHandler;
 
         public NodeCanvasPanel()
         {
             SetupPanel();
             SetupEventHandling();
+        }
+        
+        public void MoveCanvas(Vector2 delta)
+        {
+            _canvasOffset += delta;
+            _contentContainer.transform.position = _canvasOffset;
+            RefreshConnections();
+        }
+        
+        public BehaviourNode GetNodeAtPosition(Vector2 mousePosition)
+        {
+            // 转换鼠标位置到内容容器的本地坐标
+            var localPosition = mousePosition - _canvasOffset;
+
+            // 逆序遍历所有子元素，找到包含该点的节点
+            for (var i = _contentContainer.childCount - 1; i >= 0; i--)
+            {
+                var child = _contentContainer[i];
+
+                if (child is BehaviourNode node && node.ContainsPoint(localPosition))
+                {
+                    return node;
+                }
+            }
+
+            return null;
+        }
+        
+        public void SetHoveredNode(BehaviourNode node)
+        {
+            if (_hoveredNode != node)
+            {
+                // 清除之前悬浮节点的状态
+                if (_hoveredNode != null)
+                {
+                    _hoveredNode.IsHovered = false;
+                }
+
+                // 设置新的悬浮节点
+                _hoveredNode = node;
+                if (_hoveredNode != null)
+                {
+                    _hoveredNode.IsHovered = true;
+                }
+            }
+        }
+
+        public void SetSelectedNode(BehaviourNode node)
+        {
+            if (_selectedNode != node)
+            {
+                // 清除之前选中节点的状态
+                if (_selectedNode != null)
+                {
+                    _selectedNode.IsSelected = false;
+                }
+
+                // 设置新的选中节点
+                _selectedNode = node;
+                if (_selectedNode != null)
+                {
+                    _selectedNode.IsSelected = true;
+                }
+            }
+        }
+
+        public BehaviourNode GetSelectedNode()
+        {
+            return _selectedNode;
+        }
+
+        public BehaviourNode GetHoveredNode()
+        {
+            return _hoveredNode;
+        }
+
+        public void RemoveNode(BehaviourNode node)
+        {
+            if (_selectedNode == null)
+            {
+                return;
+            }
+            
+            RemoveNodeConnections(_selectedNode);
+            _contentContainer.Remove(_selectedNode);
+            SetSelectedNode(null);
+            RefreshConnections();
         }
 
         private void SetupPanel()
@@ -77,175 +167,30 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void SetupEventHandling()
         {
+            _nodeEventHandler = new NodeEventHandler
+            {
+                Target = this
+            };
+            
+            _dragCanvasHandler = new DragCanvasHandler
+            {
+                Target = this
+            };
+            
+            focusable = true;
+
             // 注册鼠标事件
-            RegisterCallback<MouseDownEvent>(OnMouseDown);
-            RegisterCallback<MouseMoveEvent>(OnMouseMove);
-            RegisterCallback<MouseUpEvent>(OnMouseUp);
+            // RegisterCallback<MouseDownEvent>(OnMouseDown);
+            // RegisterCallback<MouseMoveEvent>(OnMouseMove);
+            // RegisterCallback<MouseUpEvent>(OnMouseUp);
 
             // 注册键盘事件
-            RegisterCallback<KeyDownEvent>(HandleDeleteKeyDown);
+            // RegisterCallback<KeyDownEvent>(HandleDeleteKeyDown);
 
             // 允许焦点，这样可以接收键盘事件
-            focusable = true;
         }
 
-        private void OnMouseDown(MouseDownEvent evt)
-        {
-            // 先隐藏可能存在的右键菜单
-            HideContextMenu();
-            
-            switch (evt.button)
-            {
-                case 0:
-                    OnLeftMouseDown(evt);
-                    break;
-                case 1:
-                    OnRightMouseDown(evt);
-                    break;
-            }
-        }
 
-        // 节点拖拽和选择的处理
-        private void OnLeftMouseDown(MouseDownEvent evt)
-        {
-            // 检查是否点击在节点上
-            var clickedNode = GetNodeAtPosition(evt.localMousePosition);
-            
-            if (clickedNode != null)
-            {
-                // 处理节点选择
-                SetSelectedNode(clickedNode);
-
-                _draggingNode = clickedNode;
-                _draggingNode.StartDragging(evt.mousePosition);
-                this.CaptureMouse();
-                evt.StopPropagation();
-                return;
-            }
-
-            // 点击空白区域，取消选择
-            SetSelectedNode(null);
-        }
-        
-        // 弹出菜单和画布拖拽的处理
-        private void OnRightMouseDown(MouseDownEvent evt)
-        {
-            // 检查是否点击在节点上
-            var clickedNode = GetNodeAtPosition(evt.localMousePosition);
-
-            if (clickedNode != null)
-            {
-                return;
-            }
-                
-            _draggingRequested = true;
-            _startMousePosition = evt.localMousePosition;
-            this.CaptureMouse();
-            evt.StopPropagation();
-        }
-
-        private void OnMouseMove(MouseMoveEvent evt)
-        {
-            // 处理节点拖拽
-            if (_draggingNode is { IsDragging: true })
-            {
-                _draggingNode.UpdateDragging(evt.mousePosition);
-                evt.StopPropagation();
-                return;
-            }
-
-            // 处理节点悬浮检测（仅在非拖拽状态下）
-            if (!_draggingRequested)
-            {
-                var hoveredNode = GetNodeAtPosition(evt.localMousePosition);
-                SetHoveredNode(hoveredNode);
-            }
-
-            // 处理画布拖拽
-            if (_draggingRequested)
-            {
-                var mouseDelta = evt.localMousePosition - _startMousePosition;
-                _canvasOffset += mouseDelta;
-                _contentContainer.transform.position = _canvasOffset;
-                _startMousePosition = evt.localMousePosition;
-
-                if (mouseDelta.sqrMagnitude > 0.01f)
-                {
-                    _isDragging = true;
-                }
-
-                evt.StopPropagation();
-            }
-
-            // 处理连线拖拽
-            if (_draggingFromPort != null)
-            {
-                // 更新悬浮连线的结束位置
-                _draggingToPort.Position = evt.localMousePosition;
-                _connectionRenderer.RefreshConnections();
-                evt.StopPropagation();
-            }
-        }
-
-        private void OnMouseUp(MouseUpEvent evt)
-        {
-            if (!_isDragging && evt.button == 1)
-            {
-                // 点击在空白区域，显示创建节点菜单
-                _lastRightClickPosition = evt.localMousePosition;
-                ShowContextMenu(evt.localMousePosition);
-                evt.StopPropagation();
-            }
-            
-            // 处理节点拖拽结束
-            if (_draggingNode != null && evt.button == 0)
-            {
-                _draggingNode.EndDragging();
-                _draggingNode = null;
-                this.ReleaseMouse();
-                evt.StopPropagation();
-                return;
-            }
-            
-            // 处理画布拖拽结束
-            _draggingRequested = false;
-            
-            if (_isDragging && evt.button == 1)
-            {
-                _isDragging = false;
-                this.ReleaseMouse();
-                evt.StopPropagation();
-            }
-
-            // 处理连线拖拽结束
-            if (_draggingFromPort != null && evt.button == 0)
-            {
-                _draggingFromPort = null;
-                _connectionRenderer.RemoveConnection(_draggingConnection);
-                _connectionRenderer.RefreshConnections();
-                
-                this.ReleaseMouse();
-                evt.StopPropagation();
-            }
-        }
-
-        private void HandleDeleteKeyDown(KeyDownEvent evt)
-        {
-            if (evt.keyCode != KeyCode.Delete)
-            {
-                return;
-            }
-
-            if (_selectedNode != null)
-            {
-                RemoveNodeConnections(_selectedNode);
-                _contentContainer.Remove(_selectedNode);
-                SetSelectedNode(null);
-                RefreshConnections();
-            }
-
-            evt.StopPropagation();
-        }
 
         private void RemoveNodeConnections(BehaviourNode node)
         {
@@ -270,26 +215,6 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 RemoveConnection(connection);
             }
-        }
-
-        // 获取指定位置的节点
-        private BehaviourNode GetNodeAtPosition(Vector2 mousePosition)
-        {
-            // 转换鼠标位置到内容容器的本地坐标
-            var localPosition = mousePosition - _canvasOffset;
-
-            // 逆序遍历所有子元素，找到包含该点的节点
-            for (var i = _contentContainer.childCount - 1; i >= 0; i--)
-            {
-                var child = _contentContainer[i];
-
-                if (child is BehaviourNode node && node.ContainsPoint(localPosition))
-                {
-                    return node;
-                }
-            }
-
-            return null;
         }
 
         // 获取指定位置的端口
@@ -405,54 +330,6 @@ namespace Dynamis.Behaviours.Editor.Views
 
             // 刷新连线显示
             RefreshConnections();
-        }
-
-        private void SetHoveredNode(BehaviourNode node)
-        {
-            if (_hoveredNode != node)
-            {
-                // 清除之前悬浮节点的状态
-                if (_hoveredNode != null)
-                {
-                    _hoveredNode.IsHovered = false;
-                }
-
-                // 设置新的悬浮节点
-                _hoveredNode = node;
-                if (_hoveredNode != null)
-                {
-                    _hoveredNode.IsHovered = true;
-                }
-            }
-        }
-
-        private void SetSelectedNode(BehaviourNode node)
-        {
-            if (_selectedNode != node)
-            {
-                // 清除之前选中节点的状态
-                if (_selectedNode != null)
-                {
-                    _selectedNode.IsSelected = false;
-                }
-
-                // 设置新的选中节点
-                _selectedNode = node;
-                if (_selectedNode != null)
-                {
-                    _selectedNode.IsSelected = true;
-                }
-            }
-        }
-
-        public BehaviourNode GetSelectedNode()
-        {
-            return _selectedNode;
-        }
-
-        public BehaviourNode GetHoveredNode()
-        {
-            return _hoveredNode;
         }
 
         // 右键菜单相关方法

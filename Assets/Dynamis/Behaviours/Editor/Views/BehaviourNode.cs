@@ -74,16 +74,6 @@ namespace Dynamis.Behaviours.Editor.Views
             get => _startNodePosition; 
             set => _startNodePosition = value; 
         }
-        
-        // public Vector2 CanvasPosition
-        // {
-        //     get => new(style.left.value.value, style.top.value.value);
-        //     set
-        //     {
-        //         style.left = value.x;
-        //         style.top = value.y;
-        //     }
-        // }
 
         // 基于transform的节点位置计算，用于替代基于style的计算，尚不确定是否会引入布局问题
         public Vector2 CanvasPosition
