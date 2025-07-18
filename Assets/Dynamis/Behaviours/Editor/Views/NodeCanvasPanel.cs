@@ -172,7 +172,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 if (mouseDelta.sqrMagnitude > 0.01f)
                 {
                     _isDragging = true;
-                    this.CaptureMouse();
                 }
 
                 evt.StopPropagation();
@@ -221,18 +220,10 @@ namespace Dynamis.Behaviours.Editor.Views
             // 处理连线拖拽结束
             if (_draggingFromPort != null && evt.button == 0)
             {
-                // var targetPort = GetPortAtPosition(evt.localMousePosition);
-                // if (targetPort != null && targetPort != _draggingFromPort && targetPort.Type == PortType.Input)
-                // {
-                //     var newConnection = new Connection(_draggingFromPort, targetPort);
-                //     AddConnection(newConnection);
-                // }
-
-                // 重置连线拖拽状态
                 _draggingFromPort = null;
                 _connectionRenderer.RemoveConnection(_draggingConnection);
                 _connectionRenderer.RefreshConnections();
-                // _connectionRenderer.ClearDragConnection();
+                
                 this.ReleaseMouse();
                 evt.StopPropagation();
             }
