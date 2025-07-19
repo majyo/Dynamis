@@ -7,50 +7,99 @@ namespace Dynamis.Behaviours.Editor.Views
 {
     public class NodeCanvasPanel : VisualElement
     {
-        // 画布拖拽相关字段
-        private bool _draggingRequested;
-        private bool _isDragging;
-        private Vector2 _startMousePosition;
         private Vector2 _canvasOffset = Vector2.zero;
         private VisualElement _contentContainer;
 
-        // 节点拖拽相关字段
-        private BehaviourNode _draggingNode;
-
-        // 节点状态管理字段
-        private BehaviourNode _hoveredNode;
-        private BehaviourNode _selectedNode;
+        private BehaviourNode _mouseHoveredNode;
+        private readonly HashSet<BehaviourNode> _selectedNode = new();
+        // private BehaviourNode _selectedNode;
 
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
         private readonly List<Connection> _connections = new();
-        
+
         // 悬浮连线相关字段
         private Port _draggingFromPort;
         private DummyPort _draggingToPort;
         private Connection _draggingConnection;
-        
+
         // 右键菜单相关字段
         private CustomPopupMenu _contextMenu;
         private Vector2 _lastRightClickPosition;
+
+        public BehaviourNode MouseHoveredNode
+        {
+            get => _mouseHoveredNode;
+            set
+            {
+                if (_mouseHoveredNode == value)
+                {
+                    return;
+                }
+
+                if (_mouseHoveredNode != null)
+                {
+                    _mouseHoveredNode.IsHovered = false;
+                }
+
+                _mouseHoveredNode = value;
+
+                if (_mouseHoveredNode != null)
+                {
+                    _mouseHoveredNode.IsHovered = true;
+                }
+            }
+        }
         
-        private EventHandler<NodeCanvasPanel> _nodeEventHandler;
-        private EventHandler<NodeCanvasPanel> _dragCanvasHandler;
-        private EventHandler<NodeCanvasPanel> _contextualMenuHandler;
+        public IReadOnlyCollection<BehaviourNode> SelectedNode => _selectedNode;
 
         public NodeCanvasPanel()
         {
             SetupPanel();
             SetupEventHandling();
         }
-        
+
+        public bool AddToSelection(BehaviourNode node)
+        {
+            var succeed = _selectedNode.Add(node);
+            
+            if (succeed)
+            {
+                node.IsSelected = true;
+            }
+            
+            return succeed;
+        }
+
+        public bool RemoveFromSelection(BehaviourNode node)
+        {
+            var succeed = _selectedNode.Remove(node);
+            
+            if (succeed)
+            {
+                node.IsSelected = false;
+            }
+            
+            return succeed;
+        }
+
+        public void ClearSelection()
+        {
+            foreach (var node in _selectedNode)
+            {
+                node.IsSelected = false;
+            }
+            
+            _selectedNode.Clear();
+        }
+
         public void MoveCanvas(Vector2 delta)
         {
             _canvasOffset += delta;
             _contentContainer.transform.position = _canvasOffset;
             RefreshConnections();
         }
-        
+
         public BehaviourNode GetNodeAtPosition(Vector2 mousePosition)
         {
             // 转换鼠标位置到内容容器的本地坐标
@@ -69,65 +118,12 @@ namespace Dynamis.Behaviours.Editor.Views
 
             return null;
         }
-        
-        public void SetHoveredNode(BehaviourNode node)
-        {
-            if (_hoveredNode != node)
-            {
-                // 清除之前悬浮节点的状态
-                if (_hoveredNode != null)
-                {
-                    _hoveredNode.IsHovered = false;
-                }
-
-                // 设置新的悬浮节点
-                _hoveredNode = node;
-                if (_hoveredNode != null)
-                {
-                    _hoveredNode.IsHovered = true;
-                }
-            }
-        }
-
-        public void SetSelectedNode(BehaviourNode node)
-        {
-            if (_selectedNode != node)
-            {
-                // 清除之前选中节点的状态
-                if (_selectedNode != null)
-                {
-                    _selectedNode.IsSelected = false;
-                }
-
-                // 设置新的选中节点
-                _selectedNode = node;
-                if (_selectedNode != null)
-                {
-                    _selectedNode.IsSelected = true;
-                }
-            }
-        }
-
-        public BehaviourNode GetSelectedNode()
-        {
-            return _selectedNode;
-        }
-
-        public BehaviourNode GetHoveredNode()
-        {
-            return _hoveredNode;
-        }
 
         public void RemoveNode(BehaviourNode node)
         {
-            if (_selectedNode == null)
-            {
-                return;
-            }
-            
-            RemoveNodeConnections(_selectedNode);
-            _contentContainer.Remove(_selectedNode);
-            SetSelectedNode(null);
+            RemoveNodeConnections(node);
+            _contentContainer.Remove(node);
+            RemoveFromSelection(node);
             RefreshConnections();
         }
 
@@ -179,12 +175,12 @@ namespace Dynamis.Behaviours.Editor.Views
                     {
                         return false;
                     }
-                    
+
                     if (connection.OutputPort is not Port outputPort)
                     {
                         return false;
                     }
-                    
+
                     return inputPort.ParentNode == node || outputPort.ParentNode == node;
                 })
                 .ToList();
@@ -236,9 +232,9 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             node.CanvasPosition = position;
             node.onPositionChanged = RefreshConnections;
-            
+
             BindNodeEvents(node);
-            
+
             _contentContainer.Add(node);
         }
 
@@ -275,7 +271,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 _draggingConnection = new Connection(_draggingFromPort, _draggingToPort);
                 _connectionRenderer.AddConnection(_draggingConnection);
                 _connectionRenderer.RefreshConnections();
-                
+
                 this.CaptureMouse();
             }
         }
@@ -310,20 +306,20 @@ namespace Dynamis.Behaviours.Editor.Views
                 SetupContextMenuItems();
                 Add(_contextMenu);
             }
-            
+
             // 清空并重新设置菜单项
             _contextMenu.ClearItems();
             SetupContextMenuItems();
-            
+
             // 设置菜单位置
             _contextMenu.style.left = localPosition.x;
             _contextMenu.style.top = localPosition.y;
-            
+
             // 显示菜单
             _contextMenu.Show(localPosition);
             _contextMenu.BringToFront();
         }
-        
+
         public void HideContextMenu()
         {
             if (_contextMenu is { IsVisible: true })
@@ -331,7 +327,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 _contextMenu.Hide();
             }
         }
-        
+
         private void SetupContextMenuItems()
         {
             // 控制节点组
@@ -340,17 +336,17 @@ namespace Dynamis.Behaviours.Editor.Views
             controlGroup.AddChild("Selector", () => CreateNode("Selector", "Select first successful child", true, true));
             controlGroup.AddChild("Sequence", () => CreateNode("Sequence", "Execute children in order", true, true));
             controlGroup.AddChild("Parallel", () => CreateNode("Parallel", "Execute children in parallel", true, true));
-            
+
             // _contextMenu.AddSeparator();
-            
+
             // 条件节点组
             var conditionGroup = _contextMenu.AddGroup("条件节点", false);
             conditionGroup.AddChild("Check Health", () => CreateNode("Check Health", "Check if health is above threshold", true, true));
             conditionGroup.AddChild("Has Target", () => CreateNode("Has Target", "Check if target exists", true, true));
             conditionGroup.AddChild("In Range", () => CreateNode("In Range", "Check if target is in range", true, true));
-            
+
             // _contextMenu.AddSeparator();
-            
+
             // 行为节点组
             var actionGroup = _contextMenu.AddGroup("行为节点", false);
             actionGroup.AddChild("Move To Target", () => CreateNode("Move To Target", "Move character to target position", true, false));
@@ -358,39 +354,36 @@ namespace Dynamis.Behaviours.Editor.Views
             actionGroup.AddChild("Patrol", () => CreateNode("Patrol", "Patrol between waypoints", true, false));
             actionGroup.AddChild("Wait", () => CreateNode("Wait", "Wait for specified duration", true, false));
             actionGroup.AddChild("Play Animation", () => CreateNode("Play Animation", "Play character animation", true, false));
-            
+
             // _contextMenu.AddSeparator();
-            
+
             // 装饰器节点组
             var decoratorGroup = _contextMenu.AddGroup("装饰器节点", false);
             decoratorGroup.AddChild("Inverter", () => CreateNode("Inverter", "Invert child result", true, true));
             decoratorGroup.AddChild("Repeater", () => CreateNode("Repeater", "Repeat child execution", true, true));
             decoratorGroup.AddChild("Cooldown", () => CreateNode("Cooldown", "Add cooldown to child", true, true));
         }
-        
+
         private void CreateNode(string nodeName, string description, bool hasInput, bool hasOutput)
         {
             // 转换右键点击位置到画布坐标
             var canvasPosition = _lastRightClickPosition - _canvasOffset;
-            
+
             // 创建新节点
             var newNode = new BehaviourNode(nodeName, description, hasInput, hasOutput);
             AddNode(newNode, canvasPosition);
-            
-            // 选中新创建的节点
-            SetSelectedNode(newNode);
-            
+
             // 隐藏菜单
             HideContextMenu();
         }
-        
+
         private void BindNodeEvents(BehaviourNode node)
         {
             if (node.InputPort != null)
             {
                 node.InputPort.onPortPressed = OnPortPressed;
             }
-            
+
             if (node.OutputPort != null)
             {
                 node.OutputPort.onPortPressed = OnPortPressed;

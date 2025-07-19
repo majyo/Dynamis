@@ -8,11 +8,6 @@ namespace Dynamis.Behaviours.Editor.Views
         private Label _nameLabel;
         private Label _descriptionLabel;
         
-        // 拖拽相关字段 - 保留用于外部控制
-        private bool _isDragging;
-        private Vector2 _startMousePosition;
-        private Vector2 _startNodePosition;
-        
         // 端口相关字段
         private Port _inputPort;
         private Port _outputPort;
@@ -28,12 +23,6 @@ namespace Dynamis.Behaviours.Editor.Views
         public string Description { get; set; }
         public Port InputPort => _inputPort;
         public Port OutputPort => _outputPort;
-
-        public bool IsDragging 
-        { 
-            get => _isDragging; 
-            set => _isDragging = value; 
-        }
 
         // 悬浮状态属性
         public bool IsHovered 
@@ -63,18 +52,6 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        public Vector2 StartMousePosition 
-        { 
-            get => _startMousePosition; 
-            set => _startMousePosition = value; 
-        }
-
-        public Vector2 StartNodePosition 
-        { 
-            get => _startNodePosition; 
-            set => _startNodePosition = value; 
-        }
-
         // 基于transform的节点位置计算，用于替代基于style的计算，尚不确定是否会引入布局问题
         public Vector2 CanvasPosition
         {
@@ -94,6 +71,36 @@ namespace Dynamis.Behaviours.Editor.Views
             Description = description;
             SetupNode();
             SetupPorts(hasInput, hasOutput);
+        }
+
+        public void Move(Vector2 delta)
+        {
+            CanvasPosition += delta;
+                
+            // 通知端口更新位置
+            _inputPort?.UpdateWorldPosition();
+            _outputPort?.UpdateWorldPosition();
+                
+            // 通知连线更新
+            onPositionChanged?.Invoke();
+        }
+        
+        // 检查点是否在节点内
+        public new bool ContainsPoint(Vector2 point)
+        {
+            var rect = new Rect(CanvasPosition.x, CanvasPosition.y, CanvasSize.x, CanvasSize.y);
+            return rect.Contains(point);
+        }
+        
+        public void SetPosition(Vector2 position)
+        {
+            CanvasPosition = position;
+        }
+        
+        public void UpdateContent()
+        {
+            _nameLabel.text = NodeName;
+            _descriptionLabel.text = Description;
         }
         
         private void SetupNode()
@@ -187,57 +194,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 _outputPort = new Port(PortType.Output, this);
                 Add(_outputPort);
             }
-        }
-        
-        // 开始拖拽 - 供外部调用
-        public void StartDragging(Vector2 mousePosition)
-        {
-            _isDragging = true;
-            _startMousePosition = mousePosition;
-            _startNodePosition = CanvasPosition;
-            
-            BringToFront();
-        }
-        
-        // 执行拖拽移动 - 供外部调用
-        public void UpdateDragging(Vector2 mousePosition)
-        {
-            if (_isDragging)
-            {
-                Vector2 mouseDelta = mousePosition - _startMousePosition;
-                CanvasPosition = _startNodePosition + mouseDelta;
-                
-                // 通知端口更新位置
-                _inputPort?.UpdateWorldPosition();
-                _outputPort?.UpdateWorldPosition();
-                
-                // 通知连线更新
-                onPositionChanged?.Invoke();
-            }
-        }
-        
-        // 结束拖拽 - 供外部调用
-        public void EndDragging()
-        {
-            _isDragging = false;
-        }
-        
-        // 检查点是否在节点内
-        public new bool ContainsPoint(Vector2 point)
-        {
-            var rect = new Rect(CanvasPosition.x, CanvasPosition.y, CanvasSize.x, CanvasSize.y);
-            return rect.Contains(point);
-        }
-        
-        public void SetPosition(Vector2 position)
-        {
-            CanvasPosition = position;
-        }
-        
-        public void UpdateContent()
-        {
-            _nameLabel.text = NodeName;
-            _descriptionLabel.text = Description;
         }
 
         private void UpdateNodeStyles()
