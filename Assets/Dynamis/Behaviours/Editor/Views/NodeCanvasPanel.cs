@@ -168,32 +168,6 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void SetupEventHandling()
         {
-            _nodeEventHandler = new NodeEventHandler
-            {
-                Target = this
-            };
-            
-            _dragCanvasHandler = new CanvasDraggingHandler
-            {
-                Target = this
-            };
-
-            _contextualMenuHandler = new ContextualMenuHandler
-            {
-                Target = this
-            };
-            
-            focusable = true;
-
-            // 注册鼠标事件
-            // RegisterCallback<MouseDownEvent>(OnMouseDown);
-            // RegisterCallback<MouseMoveEvent>(OnMouseMove);
-            // RegisterCallback<MouseUpEvent>(OnMouseUp);
-
-            // 注册键盘事件
-            // RegisterCallback<KeyDownEvent>(HandleDeleteKeyDown);
-
-            // 允许焦点，这样可以接收键盘事件
         }
 
         private void RemoveNodeConnections(BehaviourNode node)
