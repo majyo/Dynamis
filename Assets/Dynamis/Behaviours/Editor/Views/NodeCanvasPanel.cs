@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
+using Dynamis.Behaviours.Editor.Events;
 
 namespace Dynamis.Behaviours.Editor.Views
 {
@@ -12,7 +13,6 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private BehaviourNode _mouseHoveredNode;
         private readonly HashSet<BehaviourNode> _selectedNode = new();
-        // private BehaviourNode _selectedNode;
 
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
@@ -26,6 +26,8 @@ namespace Dynamis.Behaviours.Editor.Views
         // 右键菜单相关字段
         private CustomPopupMenu _contextMenu;
         private Vector2 _lastRightClickPosition;
+        
+        private NodeCanvasEventHandler _eventHandler;
 
         public BehaviourNode MouseHoveredNode
         {
@@ -164,6 +166,8 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void SetupEventHandling()
         {
+            _eventHandler = new NodeCanvasEventHandler(this);
+            _eventHandler.RegisterEvents();
         }
 
         private void RemoveNodeConnections(BehaviourNode node)
