@@ -12,7 +12,7 @@ namespace Dynamis.Behaviours.Editor.Views
         private VisualElement _contentContainer;
 
         private BehaviourNode _mouseHoveredNode;
-        private readonly HashSet<BehaviourNode> _selectedNode = new();
+        private readonly HashSet<BehaviourNode> _selectedNodes = new();
 
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
@@ -53,7 +53,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
         
-        public IReadOnlyCollection<BehaviourNode> SelectedNode => _selectedNode;
+        public IReadOnlyCollection<BehaviourNode> SelectedNodes => _selectedNodes;
 
         public NodeCanvasPanel()
         {
@@ -63,7 +63,7 @@ namespace Dynamis.Behaviours.Editor.Views
 
         public bool AddToSelection(BehaviourNode node)
         {
-            var succeed = _selectedNode.Add(node);
+            var succeed = _selectedNodes.Add(node);
             
             if (succeed)
             {
@@ -75,7 +75,7 @@ namespace Dynamis.Behaviours.Editor.Views
 
         public bool RemoveFromSelection(BehaviourNode node)
         {
-            var succeed = _selectedNode.Remove(node);
+            var succeed = _selectedNodes.Remove(node);
             
             if (succeed)
             {
@@ -87,12 +87,12 @@ namespace Dynamis.Behaviours.Editor.Views
 
         public void ClearSelection()
         {
-            foreach (var node in _selectedNode)
+            foreach (var node in _selectedNodes)
             {
                 node.IsSelected = false;
             }
             
-            _selectedNode.Clear();
+            _selectedNodes.Clear();
         }
 
         public void MoveCanvas(Vector2 delta)
@@ -392,6 +392,11 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 node.OutputPort.onPortPressed = OnPortPressed;
             }
+        }
+
+        public void SetLastRightClickPosition(Vector2 position)
+        {
+            _lastRightClickPosition = position;
         }
     }
 }
