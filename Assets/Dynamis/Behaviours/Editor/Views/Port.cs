@@ -94,7 +94,7 @@ namespace Dynamis.Behaviours.Editor.Views
             RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             
             // 注册鼠标事件
-            RegisterCallback<MouseDownEvent>(OnMouseDown);
+            // RegisterCallback<MouseDownEvent>(OnMouseDown);
         }
         
         private void OnMouseDown(MouseDownEvent evt)
@@ -139,6 +139,12 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             UpdateWorldPosition();
             return Position;
+        }
+        
+        public Rect GetBoundingBox()
+        {
+            UpdateWorldPosition();
+            return new Rect(Position.x - 8, Position.y - 8, 16, 16); // 端口圆形的边界框
         }
     }
 }

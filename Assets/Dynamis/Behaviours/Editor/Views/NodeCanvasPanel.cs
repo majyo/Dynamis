@@ -400,5 +400,45 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             _lastRightClickPosition = position;
         }
+
+        // 获取画布偏移量
+        public Vector2 GetCanvasOffset()
+        {
+            return _canvasOffset;
+        }
+
+        // 获取所有节点
+        public IEnumerable<BehaviourNode> GetAllNodes()
+        {
+            return _contentContainer.Children().OfType<BehaviourNode>();
+        }
+
+        // 检查端口是否已有连线
+        public bool HasConnectionToPort(Port port)
+        {
+            return _connections.Any(conn => conn.InputPort == port || conn.OutputPort == port);
+        }
+
+        // 更新拖拽连线的终点位置
+        public void UpdateDraggingConnectionEndPoint(Vector2 position)
+        {
+            if (_draggingConnection != null && _draggingToPort != null)
+            {
+                _draggingToPort.Position = position;
+                RefreshConnections();
+            }
+        }
+
+        // 清理拖拽连线
+        public void ClearDraggingConnection()
+        {
+            if (_draggingConnection != null)
+            {
+                RemoveConnection(_draggingConnection);
+                _draggingConnection = null;
+                _draggingFromPort = null;
+            }
+        }
     }
 }
+

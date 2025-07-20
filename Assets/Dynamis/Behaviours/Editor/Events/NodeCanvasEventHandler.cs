@@ -9,12 +9,24 @@ namespace Dynamis.Behaviours.Editor.Events
     {
         private readonly NodeCanvasPanel _canvas;
         
+        // 拖拽相关常量
+        private const float DragThreshold = 5f;
+        private const int RightMouseButton = 1;
+        private const int LeftMouseButton = 0;
+        
         // 拖拽状态
         private bool _isDraggingNode;
         private bool _isDraggingCanvas;
+        private bool _isDraggingConnection; // 新增：连线拖拽状态
         private BehaviourNode _draggedNode;
         private Vector2 _dragStartPosition;
         private Vector2 _lastMousePosition;
+        
+        // 右键状态追踪
+        private bool _rightMousePressed;
+        
+        // 连线拖拽相关
+        private Port _draggingFromPort;
 
         public NodeCanvasEventHandler(NodeCanvasPanel canvas)
         {
@@ -23,28 +35,37 @@ namespace Dynamis.Behaviours.Editor.Events
 
         public void RegisterEvents()
         {
-            // 注册鼠标事件
             _canvas.RegisterCallback<MouseDownEvent>(OnMouseDown);
             _canvas.RegisterCallback<MouseUpEvent>(OnMouseUp);
             _canvas.RegisterCallback<MouseMoveEvent>(OnMouseMove);
             _canvas.RegisterCallback<MouseLeaveEvent>(OnMouseLeave);
-            
-            // 注册键盘事件
             _canvas.RegisterCallback<KeyDownEvent>(OnKeyDown);
         }
+
+        #region 主要事件处理
 
         private void OnMouseDown(MouseDownEvent evt)
         {
             var mousePosition = evt.localMousePosition;
+            
+            // 检查是否点击在端口上
+            var portAtPosition = GetPortAtPosition(mousePosition);
             var nodeAtPosition = _canvas.GetNodeAtPosition(mousePosition);
+            
+            // 初始化拖拽起始位置
+            _dragStartPosition = mousePosition;
+            _lastMousePosition = mousePosition;
+            
+            Debug.Log($"OnMouseDown at {mousePosition}, Port: {portAtPosition?.name}, Node: {nodeAtPosition?.name}");
 
-            if (evt.button == 0) // 左键
+            switch (evt.button)
             {
-                HandleLeftMouseDown(mousePosition, nodeAtPosition, evt.ctrlKey);
-            }
-            else if (evt.button == 1) // 右键
-            {
-                HandleRightMouseDown(mousePosition, nodeAtPosition);
+                case LeftMouseButton:
+                    HandleLeftMouseDown(nodeAtPosition, portAtPosition, evt.altKey);
+                    break;
+                case RightMouseButton:
+                    HandleRightMouseDown(mousePosition, nodeAtPosition);
+                    break;
             }
 
             evt.StopPropagation();
@@ -52,13 +73,14 @@ namespace Dynamis.Behaviours.Editor.Events
 
         private void OnMouseUp(MouseUpEvent evt)
         {
-            if (evt.button == 0) // 左键
+            switch (evt.button)
             {
-                HandleLeftMouseUp(evt.localMousePosition);
-            }
-            else if (evt.button == 1) // 右键
-            {
-                HandleRightMouseUp(evt.localMousePosition);
+                case LeftMouseButton:
+                    HandleLeftMouseUp(evt.localMousePosition);
+                    break;
+                case RightMouseButton:
+                    HandleRightMouseUp(evt.localMousePosition);
+                    break;
             }
 
             evt.StopPropagation();
@@ -69,11 +91,266 @@ namespace Dynamis.Behaviours.Editor.Events
             var mousePosition = evt.localMousePosition;
             var mouseDelta = mousePosition - _lastMousePosition;
             
-            // 更新鼠标悬浮状态
             UpdateHoverState(mousePosition);
+            HandleDragOperations(evt, mousePosition, mouseDelta);
+            
+            _lastMousePosition = mousePosition;
+            evt.StopPropagation();
+        }
 
-            // 处理拖拽
-            if (_isDraggingNode)
+        private void OnMouseLeave(MouseLeaveEvent evt)
+        {
+            _canvas.MouseHoveredNode = null;
+            evt.StopPropagation();
+        }
+
+        private void OnKeyDown(KeyDownEvent evt)
+        {
+            switch (evt.keyCode)
+            {
+                case KeyCode.Delete:
+                    DeleteSelectedNodes();
+                    break;
+                case KeyCode.Escape:
+                    CancelOperations();
+                    break;
+            }
+
+            evt.StopPropagation();
+        }
+
+        #endregion
+
+        #region 左键操作处理
+
+        private void HandleLeftMouseDown(BehaviourNode nodeAtPosition, Port portAtPosition, bool isAltPressed)
+        {
+            _canvas.HideContextMenu();
+
+            // 优先处理端口点击
+            if (portAtPosition != null)
+            {
+                HandlePortClick(portAtPosition, isAltPressed);
+            }
+            else if (nodeAtPosition != null)
+            {
+                HandleNodeSelection(nodeAtPosition, isAltPressed);
+                StartNodeDrag(nodeAtPosition);
+            }
+            else
+            {
+                HandleEmptyAreaClick(isAltPressed);
+            }
+        }
+
+        private void HandleLeftMouseUp(Vector2 mousePosition)
+        {
+            if (_isDraggingConnection)
+            {
+                EndConnectionDrag(mousePosition);
+            }
+            else if (_isDraggingNode)
+            {
+                EndNodeDrag();
+            }
+            
+            ResetDragStates();
+            _canvas.ReleaseMouse();
+        }
+
+        private void HandlePortClick(Port port, bool isAltPressed)
+        {
+            if (isAltPressed)
+            {
+                // Alt+点击端口：删除该端口的所有连线
+                _canvas.RemovePortConnections(port);
+            }
+            else if (port.Type == PortType.Output)
+            {
+                // 左键点击输出端口：开始拖拽连线
+                StartConnectionDrag(port);
+            }
+            // 输入端口的左键点击暂时不处理，可以后续扩展
+        }
+
+        private void HandleNodeSelection(BehaviourNode node, bool isCtrlPressed)
+        {
+            if (isCtrlPressed)
+            {
+                ToggleNodeSelection(node);
+            }
+            else
+            {
+                SelectSingleNode(node);
+            }
+        }
+
+        private void ToggleNodeSelection(BehaviourNode node)
+        {
+            if (_canvas.SelectedNodes.Contains(node))
+            {
+                _canvas.RemoveFromSelection(node);
+            }
+            else
+            {
+                _canvas.AddToSelection(node);
+            }
+        }
+
+        private void SelectSingleNode(BehaviourNode node)
+        {
+            if (!_canvas.SelectedNodes.Contains(node))
+            {
+                _canvas.ClearSelection();
+                _canvas.AddToSelection(node);
+            }
+        }
+
+        private void HandleEmptyAreaClick(bool isCtrlPressed)
+        {
+            if (!isCtrlPressed)
+            {
+                _canvas.ClearSelection();
+            }
+        }
+
+        #endregion
+
+        #region 右键操作处理
+
+        private void HandleRightMouseDown(Vector2 mousePosition, BehaviourNode _)
+        {
+            _canvas.SetLastRightClickPosition(mousePosition);
+            _rightMousePressed = true;
+            _canvas.HideContextMenu();
+        }
+
+        private void HandleRightMouseUp(Vector2 mousePosition)
+        {
+            _rightMousePressed = false;
+            
+            if (_isDraggingCanvas)
+            {
+                EndCanvasDrag();
+            }
+            else
+            {
+                TryShowContextMenu(mousePosition);
+            }
+        }
+
+        private void TryShowContextMenu(Vector2 mousePosition)
+        {
+            var dragDistance = Vector2.Distance(mousePosition, _dragStartPosition);
+            
+            if (dragDistance < DragThreshold)
+            {
+                var nodeAtStartPosition = _canvas.GetNodeAtPosition(_dragStartPosition);
+                if (nodeAtStartPosition == null)
+                {
+                    _canvas.ShowContextMenu(mousePosition);
+                }
+            }
+        }
+
+        #endregion
+
+        #region 连线拖拽处理
+
+        private void StartConnectionDrag(Port fromPort)
+        {
+            _isDraggingConnection = true;
+            _draggingFromPort = fromPort;
+            _canvas.CaptureMouse();
+            
+            // 通知canvas开始连线拖拽
+            _canvas.OnPortPressed(fromPort, false);
+        }
+
+        private void HandleConnectionDrag(Vector2 mousePosition)
+        {
+            if (_isDraggingConnection && _draggingFromPort != null)
+            {
+                // 更新虚拟连线的终点位置
+                UpdateDraggingConnection(mousePosition);
+            }
+        }
+
+        private void EndConnectionDrag(Vector2 mousePosition)
+        {
+            if (!_isDraggingConnection || _draggingFromPort == null)
+            {
+                return;
+            }
+
+            // 检查释放位置是否有合适的输入端口
+            var targetPort = GetPortAtPosition(mousePosition);
+            
+            if (IsValidConnectionTarget(targetPort))
+            {
+                // 创建实际连线
+                CreateConnection(_draggingFromPort, targetPort);
+            }
+            
+            // 清理拖拽状态
+            CleanupConnectionDrag();
+        }
+
+        private void UpdateDraggingConnection(Vector2 mousePosition)
+        {
+            // 将鼠标位置转换为画布坐标系
+            var canvasPosition = mousePosition - _canvas.GetCanvasOffset();
+            
+            // 通知canvas更新虚拟连线终点
+            _canvas.UpdateDraggingConnectionEndPoint(canvasPosition);
+        }
+
+        private bool IsValidConnectionTarget(Port targetPort)
+        {
+            if (targetPort == null || _draggingFromPort == null)
+                return false;
+                
+            // 检查端口类型：输出端口只能连接到输入端口
+            if (targetPort.Type != PortType.Input)
+                return false;
+                
+            // 检查是否是同一个节点的端口
+            if (targetPort.ParentNode == _draggingFromPort.ParentNode)
+                return false;
+                
+            // 检查输入端口是否已经有连线（通常输入端口只能有一��连线）
+            if (_canvas.HasConnectionToPort(targetPort))
+                return false;
+                
+            return true;
+        }
+
+        private void CreateConnection(Port outputPort, Port inputPort)
+        {
+            var connection = new Connection(outputPort, inputPort);
+            _canvas.AddConnection(connection);
+        }
+
+        private void CleanupConnectionDrag()
+        {
+            _isDraggingConnection = false;
+            _draggingFromPort = null;
+            
+            // 通知canvas清理虚拟连线
+            _canvas.ClearDraggingConnection();
+        }
+
+        #endregion
+
+        #region 拖拽操作处理
+
+        private void HandleDragOperations(MouseMoveEvent evt, Vector2 mousePosition, Vector2 mouseDelta)
+        {
+            if (_isDraggingConnection)
+            {
+                HandleConnectionDrag(mousePosition);
+            }
+            else if (_isDraggingNode)
             {
                 HandleNodeDrag(mouseDelta);
             }
@@ -83,180 +360,39 @@ namespace Dynamis.Behaviours.Editor.Events
             }
             else
             {
-                // 检查是否应该开始画布拖拽（右键按住且移动距离超过阈值）
-                if (evt.pressedButtons == 0b10) // 右键按住
-                {
-                    var dragDistance = Vector2.Distance(mousePosition, _dragStartPosition);
-                    if (dragDistance > 2f) // 超过阈值，开始拖拽画布
-                    {
-                        var nodeAtStart = _canvas.GetNodeAtPosition(_dragStartPosition);
-                        if (nodeAtStart == null) // 确保开始位置没有节点
-                        {
-                            _isDraggingCanvas = true;
-                            _canvas.CaptureMouse();
-                            _canvas.HideContextMenu();
-                        }
-                    }
-                }
-            }
-
-            _lastMousePosition = mousePosition;
-            evt.StopPropagation();
-        }
-
-        private void OnMouseLeave(MouseLeaveEvent evt)
-        {
-            // 清除悬浮状态
-            _canvas.MouseHoveredNode = null;
-            evt.StopPropagation();
-        }
-
-        private void OnKeyDown(KeyDownEvent evt)
-        {
-            if (evt.keyCode == KeyCode.Delete)
-            {
-                // 删除选中的节点
-                var selectedNodes = _canvas.SelectedNodes.ToArray();
-                foreach (var node in selectedNodes)
-                {
-                    _canvas.RemoveNode(node);
-                }
-            }
-            else if (evt.keyCode == KeyCode.Escape)
-            {
-                // 取消选择
-                _canvas.ClearSelection();
-                _canvas.HideContextMenu();
-            }
-
-            evt.StopPropagation();
-        }
-
-        private void HandleLeftMouseDown(Vector2 mousePosition, BehaviourNode nodeAtPosition, bool isCtrlPressed)
-        {
-            // 隐藏右键菜单
-            _canvas.HideContextMenu();
-
-            if (nodeAtPosition != null)
-            {
-                // 点击在节点上
-                HandleNodeSelection(nodeAtPosition, isCtrlPressed);
-                StartNodeDrag(nodeAtPosition, mousePosition);
-            }
-            else
-            {
-                // 点击在空白处
-                if (!isCtrlPressed)
-                {
-                    _canvas.ClearSelection();
-                }
-            }
-
-            _dragStartPosition = mousePosition;
-            _lastMousePosition = mousePosition;
-        }
-
-        private void HandleLeftMouseUp(Vector2 _)
-        {
-            if (_isDraggingNode)
-            {
-                EndNodeDrag();
-            }
-            
-            _isDraggingCanvas = false;
-            _isDraggingNode = false;
-            _draggedNode = null;
-            
-            _canvas.ReleaseMouse();
-        }
-
-        private void HandleRightMouseDown(Vector2 mousePosition, BehaviourNode nodeAtPosition)
-        {
-            // 设置右键点击位置，用于菜单显示
-            _canvas.SetLastRightClickPosition(mousePosition);
-            _dragStartPosition = mousePosition;
-            _lastMousePosition = mousePosition;
-            
-            if (nodeAtPosition == null)
-            {
-                // 右键点击空白处，隐藏菜单但不立即开始拖拽
-                _canvas.HideContextMenu();
-                // 注意：这里不立即设置 _isDraggingCanvas = true，等到移动时再判断
-            }
-            else
-            {
-                // 右键点击节点，隐藏菜单
-                _canvas.HideContextMenu();
+                CheckForCanvasDragStart(evt, mousePosition);
             }
         }
 
-        private void HandleRightMouseUp(Vector2 mousePosition)
+        private void CheckForCanvasDragStart(MouseMoveEvent evt, Vector2 mousePosition)
         {
-            if (_isDraggingCanvas)
+            // 检查右键是否按住且移动距离超过阈值
+            if (_rightMousePressed && IsRightMouseButtonPressed(evt))
             {
-                // 结束画布拖拽
-                _isDraggingCanvas = false;
-                _canvas.ReleaseMouse();
-            }
-            else
-            {
-                // 计算拖拽距离
                 var dragDistance = Vector2.Distance(mousePosition, _dragStartPosition);
-                
-                // 只有在拖拽距离很小且右键按下时没有点击到节点的情况下才显示菜单
-                if (dragDistance < 5f)
+                if (dragDistance > DragThreshold)
                 {
-                    var nodeAtPosition = _canvas.GetNodeAtPosition(_dragStartPosition);
-                    if (nodeAtPosition == null)
+                    var nodeAtStart = _canvas.GetNodeAtPosition(_dragStartPosition);
+                    if (nodeAtStart == null)
                     {
-                        Debug.Log($"Showing context menu at position: {mousePosition}, drag distance: {dragDistance}");
-                        _canvas.ShowContextMenu(mousePosition);
+                        StartCanvasDrag();
                     }
                 }
             }
         }
 
-        private void UpdateHoverState(Vector2 mousePosition)
+        private bool IsRightMouseButtonPressed(MouseMoveEvent evt)
         {
-            if (!_isDraggingNode && !_isDraggingCanvas)
-            {
-                var nodeAtPosition = _canvas.GetNodeAtPosition(mousePosition);
-                _canvas.MouseHoveredNode = nodeAtPosition;
-            }
+            return (evt.pressedButtons & 2) == 2; // 检查右键位
         }
 
-        private void HandleNodeSelection(BehaviourNode node, bool isCtrlPressed)
-        {
-            if (isCtrlPressed)
-            {
-                // Ctrl+点击：切换选择状态
-                if (_canvas.SelectedNodes.Contains(node))
-                {
-                    _canvas.RemoveFromSelection(node);
-                }
-                else
-                {
-                    _canvas.AddToSelection(node);
-                }
-            }
-            else
-            {
-                // 普通点击：单选
-                if (!_canvas.SelectedNodes.Contains(node))
-                {
-                    _canvas.ClearSelection();
-                    _canvas.AddToSelection(node);
-                }
-            }
-        }
-
-        private void StartNodeDrag(BehaviourNode node, Vector2 _)
+        private void StartNodeDrag(BehaviourNode node)
         {
             _isDraggingNode = true;
             _draggedNode = node;
             _canvas.CaptureMouse();
 
-            // 如果拖拽的节点不在选择集合中，先选中它
+            // 确保拖拽的节点被选中
             if (!_canvas.SelectedNodes.Contains(node))
             {
                 _canvas.ClearSelection();
@@ -271,17 +407,10 @@ namespace Dynamis.Behaviours.Editor.Events
             // 移动所有选中的节点
             foreach (var selectedNode in _canvas.SelectedNodes)
             {
-                var newPosition = selectedNode.CanvasPosition + mouseDelta;
-                selectedNode.CanvasPosition = newPosition;
+                selectedNode.CanvasPosition += mouseDelta;
             }
 
-            // 刷新连线
             _canvas.RefreshConnections();
-        }
-
-        private void HandleCanvasDrag(Vector2 mouseDelta)
-        {
-            _canvas.MoveCanvas(mouseDelta);
         }
 
         private void EndNodeDrag()
@@ -289,5 +418,95 @@ namespace Dynamis.Behaviours.Editor.Events
             _isDraggingNode = false;
             _draggedNode = null;
         }
+
+        private void StartCanvasDrag()
+        {
+            _isDraggingCanvas = true;
+            _canvas.CaptureMouse();
+            _canvas.HideContextMenu();
+        }
+
+        private void HandleCanvasDrag(Vector2 mouseDelta)
+        {
+            _canvas.MoveCanvas(mouseDelta);
+        }
+
+        private void EndCanvasDrag()
+        {
+            _isDraggingCanvas = false;
+            _canvas.ReleaseMouse();
+        }
+
+        #endregion
+
+        #region 辅助方法
+
+        private void UpdateHoverState(Vector2 mousePosition)
+        {
+            if (!_isDraggingNode && !_isDraggingCanvas)
+            {
+                var nodeAtPosition = _canvas.GetNodeAtPosition(mousePosition);
+                _canvas.MouseHoveredNode = nodeAtPosition;
+            }
+        }
+
+        private void DeleteSelectedNodes()
+        {
+            var selectedNodes = _canvas.SelectedNodes.ToArray();
+            foreach (var node in selectedNodes)
+            {
+                _canvas.RemoveNode(node);
+            }
+        }
+
+        private void CancelOperations()
+        {
+            _canvas.ClearSelection();
+            _canvas.HideContextMenu();
+        }
+
+        private Port GetPortAtPosition(Vector2 mousePosition)
+        {
+            // 转换鼠标位置到画布坐标系
+            var canvasPosition = mousePosition - _canvas.GetCanvasOffset();
+            
+            // 遍历所有节点，检查端口
+            foreach (var node in _canvas.GetAllNodes())
+            {
+                // 检查输入端口
+                if (node.InputPort != null && IsPointInPort(node.InputPort, canvasPosition))
+                {
+                    return node.InputPort;
+                }
+
+                // 检查输出端口
+                if (node.OutputPort != null && IsPointInPort(node.OutputPort, canvasPosition))
+                {
+                    return node.OutputPort;
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsPointInPort(Port port, Vector2 position)
+        {
+            // var portWorldPos = port.GetConnectionPoint();
+            // var portRect = new Rect(portWorldPos.x - 8, portWorldPos.y - 8, 16, 16);
+            return port.GetBoundingBox().Contains(position);
+            // return portRect.Contains(position);
+        }
+
+        private void ResetDragStates()
+        {
+            _isDraggingCanvas = false;
+            _isDraggingNode = false;
+            _isDraggingConnection = false;
+            _draggedNode = null;
+            _draggingFromPort = null;
+            _rightMousePressed = false;
+        }
+
+        #endregion
     }
 }
