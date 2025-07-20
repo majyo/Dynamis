@@ -166,6 +166,8 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void SetupEventHandling()
         {
+            this.focusable = true;
+            
             _eventHandler = new NodeCanvasEventHandler(this);
             _eventHandler.RegisterEvents();
         }

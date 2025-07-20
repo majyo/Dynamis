@@ -14,7 +14,6 @@ namespace Dynamis.Behaviours.Editor.Events
         private bool _isDraggingCanvas;
         private BehaviourNode _draggedNode;
         private Vector2 _dragStartPosition;
-        private Vector2 _nodeOriginalPosition;
         private Vector2 _lastMousePosition;
 
         public NodeCanvasEventHandler(NodeCanvasPanel canvas)
@@ -82,6 +81,24 @@ namespace Dynamis.Behaviours.Editor.Events
             {
                 HandleCanvasDrag(mouseDelta);
             }
+            else
+            {
+                // 检查是否应该开始画布拖拽（右键按住且移动距离超过阈值）
+                if (evt.pressedButtons == 0b10) // 右键按住
+                {
+                    var dragDistance = Vector2.Distance(mousePosition, _dragStartPosition);
+                    if (dragDistance > 2f) // 超过阈值，开始拖拽画布
+                    {
+                        var nodeAtStart = _canvas.GetNodeAtPosition(_dragStartPosition);
+                        if (nodeAtStart == null) // 确保开始位置没有节点
+                        {
+                            _isDraggingCanvas = true;
+                            _canvas.CaptureMouse();
+                            _canvas.HideContextMenu();
+                        }
+                    }
+                }
+            }
 
             _lastMousePosition = mousePosition;
             evt.StopPropagation();
@@ -139,7 +156,7 @@ namespace Dynamis.Behaviours.Editor.Events
             _lastMousePosition = mousePosition;
         }
 
-        private void HandleLeftMouseUp(Vector2 mousePosition)
+        private void HandleLeftMouseUp(Vector2 _)
         {
             if (_isDraggingNode)
             {
@@ -157,14 +174,18 @@ namespace Dynamis.Behaviours.Editor.Events
         {
             // 设置右键点击位置，用于菜单显示
             _canvas.SetLastRightClickPosition(mousePosition);
+            _dragStartPosition = mousePosition;
+            _lastMousePosition = mousePosition;
             
             if (nodeAtPosition == null)
             {
-                // 右键点击空白处，准备拖拽画布
-                _isDraggingCanvas = true;
-                _dragStartPosition = mousePosition;
-                _lastMousePosition = mousePosition;
-                _canvas.CaptureMouse();
+                // 右键点击空白处，隐藏菜单但不立即开始拖拽
+                _canvas.HideContextMenu();
+                // 注意：这里不立即设置 _isDraggingCanvas = true，等到移动时再判断
+            }
+            else
+            {
+                // 右键点击节点，隐藏菜单
                 _canvas.HideContextMenu();
             }
         }
@@ -173,16 +194,24 @@ namespace Dynamis.Behaviours.Editor.Events
         {
             if (_isDraggingCanvas)
             {
+                // 结束画布拖拽
                 _isDraggingCanvas = false;
                 _canvas.ReleaseMouse();
             }
             else
             {
-                // 如果没有拖拽，显示右键菜单
+                // 计算拖拽距离
                 var dragDistance = Vector2.Distance(mousePosition, _dragStartPosition);
-                if (dragDistance < 5f) // 5像素的容错范围
+                
+                // 只有在拖拽距离很小且右键按下时没有点击到节点的情况下才显示菜单
+                if (dragDistance < 5f)
                 {
-                    _canvas.ShowContextMenu(mousePosition);
+                    var nodeAtPosition = _canvas.GetNodeAtPosition(_dragStartPosition);
+                    if (nodeAtPosition == null)
+                    {
+                        Debug.Log($"Showing context menu at position: {mousePosition}, drag distance: {dragDistance}");
+                        _canvas.ShowContextMenu(mousePosition);
+                    }
                 }
             }
         }
@@ -221,11 +250,10 @@ namespace Dynamis.Behaviours.Editor.Events
             }
         }
 
-        private void StartNodeDrag(BehaviourNode node, Vector2 mousePosition)
+        private void StartNodeDrag(BehaviourNode node, Vector2 _)
         {
             _isDraggingNode = true;
             _draggedNode = node;
-            _nodeOriginalPosition = node.CanvasPosition;
             _canvas.CaptureMouse();
 
             // 如果拖拽的节点不在选择集合中，先选中它
