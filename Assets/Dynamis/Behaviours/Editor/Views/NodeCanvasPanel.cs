@@ -439,6 +439,14 @@ namespace Dynamis.Behaviours.Editor.Views
                 _draggingFromPort = null;
             }
         }
+
+        // 设置端口的吸附高亮状态
+        public void SetPortSnapHighlight(Port port, bool highlight)
+        {
+            if (port != null)
+            {
+                port.SetSnapHighlight(highlight);
+            }
+        }
     }
 }
-

@@ -146,5 +146,32 @@ namespace Dynamis.Behaviours.Editor.Views
             UpdateWorldPosition();
             return new Rect(Position.x - 8, Position.y - 8, 16, 16); // 端口圆形的边界框
         }
+
+        // 设置端口的吸附高亮状态
+        public void SetSnapHighlight(bool highlight)
+        {
+            if (highlight)
+            {
+                // 添加吸附高亮样式
+                _portCircle.style.borderTopWidth = 2;
+                _portCircle.style.borderBottomWidth = 2;
+                _portCircle.style.borderLeftWidth = 2;
+                _portCircle.style.borderRightWidth = 2;
+                _portCircle.style.borderTopColor = Color.yellow;
+                _portCircle.style.borderBottomColor = Color.yellow;
+                _portCircle.style.borderLeftColor = Color.yellow;
+                _portCircle.style.borderRightColor = Color.yellow;
+                _portCircle.style.scale = new Scale(Vector3.one * 1.2f); // 稍微放大
+            }
+            else
+            {
+                // 移除吸附高亮样式
+                _portCircle.style.borderTopWidth = 0;
+                _portCircle.style.borderBottomWidth = 0;
+                _portCircle.style.borderLeftWidth = 0;
+                _portCircle.style.borderRightWidth = 0;
+                _portCircle.style.scale = new Scale(Vector3.one); // 恢复原始大小
+            }
+        }
     }
 }

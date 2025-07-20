@@ -11,6 +11,7 @@ namespace Dynamis.Behaviours.Editor.Events
         
         // 拖拽相关常量
         private const float DragThreshold = 5f;
+        private const float SnapThreshold = 30f; // 新增：吸附阈值
         private const int RightMouseButton = 1;
         private const int LeftMouseButton = 0;
         
@@ -27,6 +28,7 @@ namespace Dynamis.Behaviours.Editor.Events
         
         // 连线拖拽相关
         private Port _draggingFromPort;
+        private Port _snapTargetPort; // 新增：当前吸附的目标端口
 
         public NodeCanvasEventHandler(NodeCanvasPanel canvas)
         {
@@ -261,6 +263,7 @@ namespace Dynamis.Behaviours.Editor.Events
         {
             _isDraggingConnection = true;
             _draggingFromPort = fromPort;
+            _snapTargetPort = null; // 重置吸附目标
             _canvas.CaptureMouse();
             
             // 通知canvas开始连线拖拽
@@ -271,8 +274,17 @@ namespace Dynamis.Behaviours.Editor.Events
         {
             if (_isDraggingConnection && _draggingFromPort != null)
             {
+                // 检查是否有可吸附的端口
+                var snapTarget = FindSnapTarget(mousePosition);
+                
+                if (snapTarget != _snapTargetPort)
+                {
+                    // 更新吸附目标
+                    UpdateSnapTarget(snapTarget);
+                }
+
                 // 更新虚拟连线的终点位置
-                UpdateDraggingConnection(mousePosition);
+                UpdateDraggingConnection(mousePosition, snapTarget);
             }
         }
 
@@ -283,8 +295,8 @@ namespace Dynamis.Behaviours.Editor.Events
                 return;
             }
 
-            // 检查释放位置是否有合适的输入端口
-            var targetPort = GetPortAtPosition(mousePosition);
+            // 优先使用吸附目标，如果没有则检查鼠标位置的端口
+            var targetPort = _snapTargetPort ?? GetPortAtPosition(mousePosition);
             
             if (IsValidConnectionTarget(targetPort))
             {
@@ -296,13 +308,80 @@ namespace Dynamis.Behaviours.Editor.Events
             CleanupConnectionDrag();
         }
 
-        private void UpdateDraggingConnection(Vector2 mousePosition)
+        private Port FindSnapTarget(Vector2 mousePosition)
         {
-            // 将鼠标位置转换为画布坐标系
             var canvasPosition = mousePosition - _canvas.GetCanvasOffset();
             
+            Port closestPort = null;
+            float closestDistance = float.MaxValue;
+            
+            // 遍历所有节点的输入端口，寻找最近的可连接端口
+            foreach (var node in _canvas.GetAllNodes())
+            {
+                if (node.InputPort != null)
+                {
+                    var port = node.InputPort;
+                    
+                    // 检查是否是有效的连接目标
+                    if (IsValidConnectionTarget(port))
+                    {
+                        var portPosition = port.GetConnectionPoint();
+                        var distance = Vector2.Distance(canvasPosition, portPosition);
+                        
+                        // 在吸附范围内且距离最近
+                        if (distance <= SnapThreshold && distance < closestDistance)
+                        {
+                            closestPort = port;
+                            closestDistance = distance;
+                        }
+                    }
+                }
+            }
+            
+            return closestPort;
+        }
+
+        private void UpdateSnapTarget(Port newSnapTarget)
+        {
+            // 清除之前的吸附高亮
+            if (_snapTargetPort != null)
+            {
+                SetPortSnapHighlight(_snapTargetPort, false);
+            }
+            
+            // 设置新的吸附目标
+            _snapTargetPort = newSnapTarget;
+            
+            // 高亮新的吸附目标
+            if (_snapTargetPort != null)
+            {
+                SetPortSnapHighlight(_snapTargetPort, true);
+            }
+        }
+
+        private void SetPortSnapHighlight(Port port, bool highlight)
+        {
+            // 通知canvas设置端口的吸附高亮状态
+            _canvas.SetPortSnapHighlight(port, highlight);
+        }
+
+        private void UpdateDraggingConnection(Vector2 mousePosition, Port snapTarget)
+        {
+            Vector2 targetPosition;
+            
+            if (snapTarget != null)
+            {
+                // 如果有吸附目标，使用目标端口的位置
+                targetPosition = snapTarget.GetConnectionPoint();
+            }
+            else
+            {
+                // 否则使用鼠标位置
+                targetPosition = mousePosition - _canvas.GetCanvasOffset();
+            }
+            
             // 通知canvas更新虚拟连线终点
-            _canvas.UpdateDraggingConnectionEndPoint(canvasPosition);
+            _canvas.UpdateDraggingConnectionEndPoint(targetPosition);
         }
 
         private bool IsValidConnectionTarget(Port targetPort)
@@ -333,6 +412,13 @@ namespace Dynamis.Behaviours.Editor.Events
 
         private void CleanupConnectionDrag()
         {
+            // 清除吸附高亮
+            if (_snapTargetPort != null)
+            {
+                SetPortSnapHighlight(_snapTargetPort, false);
+                _snapTargetPort = null;
+            }
+            
             _isDraggingConnection = false;
             _draggingFromPort = null;
             
@@ -499,6 +585,13 @@ namespace Dynamis.Behaviours.Editor.Events
 
         private void ResetDragStates()
         {
+            // 清除吸附状态
+            if (_snapTargetPort != null)
+            {
+                SetPortSnapHighlight(_snapTargetPort, false);
+                _snapTargetPort = null;
+            }
+            
             _isDraggingCanvas = false;
             _isDraggingNode = false;
             _isDraggingConnection = false;
@@ -510,3 +603,4 @@ namespace Dynamis.Behaviours.Editor.Events
         #endregion
     }
 }
+
