@@ -93,7 +93,7 @@ namespace Dynamis.Behaviours.Editor.Views
             // 注册回调以更新世界位置
             RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
             
-            // 注册鼠标事件
+            // 注册鼠标事件 (Mouse event registration is currently disabled. Uncomment the line below to enable it if needed for future functionality.)
             // RegisterCallback<MouseDownEvent>(OnMouseDown);
         }
         
