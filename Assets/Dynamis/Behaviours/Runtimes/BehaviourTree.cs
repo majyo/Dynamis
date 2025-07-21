@@ -11,7 +11,6 @@ namespace Dynamis.Behaviours.Runtimes
         Dfs
     }
 
-    [CreateAssetMenu(fileName = "New Behaviour Tree", menuName = "Dynamis/Behaviour Tree")]
     public class BehaviourTree : ScriptableObject
     {
         [SerializeField] private Node rootNode;
