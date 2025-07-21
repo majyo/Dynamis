@@ -397,7 +397,7 @@ namespace Dynamis.Behaviours.Editor.Events
             if (targetPort.ParentNode == _draggingFromPort.ParentNode)
                 return false;
                 
-            // 检查输入端口是否已经有连线（通常输入端口只能有一��连线）
+            // 检查输入端口是否已经有连线（通常输入端口只能有一个连线）
             if (_canvas.HasConnectionToPort(targetPort))
                 return false;
                 
