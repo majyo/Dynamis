@@ -37,6 +37,35 @@ namespace Dynamis.Behaviours.Runtimes
 
         public NodeState State => state;
         public BehaviourTree Tree => tree;
+        
+        // Blackboard access properties and methods
+        protected Blackboard Blackboard => tree?.Blackboard;
+        
+        // Convenient blackboard access methods
+        protected void SetBlackboardValue<T>(string key, T value)
+        {
+            Blackboard?.SetValue(key, value);
+        }
+        
+        protected T GetBlackboardValue<T>(string key)
+        {
+            return Blackboard != null ? Blackboard.GetValue<T>(key) : default;
+        }
+        
+        protected T GetBlackboardValue<T>(string key, T defaultValue)
+        {
+            if (Blackboard == null)
+            {
+                return defaultValue;
+            }
+            
+            return Blackboard.GetValue(key, defaultValue) ?? defaultValue;
+        }
+        
+        protected bool HasBlackboardKey(string key)
+        {
+            return Blackboard?.HasKey(key) ?? false;
+        }
 
         public NodeState Update()
         {
