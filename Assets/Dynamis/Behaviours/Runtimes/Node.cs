@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Dynamis.Behaviours.Runtimes.Blackboards;
+using UnityEngine;
 
 namespace Dynamis.Behaviours.Runtimes
 {
@@ -45,26 +46,6 @@ namespace Dynamis.Behaviours.Runtimes
         protected void SetBlackboardValue<T>(string key, T value)
         {
             Blackboard?.SetValue(key, value);
-        }
-        
-        protected T GetBlackboardValue<T>(string key)
-        {
-            return Blackboard != null ? Blackboard.GetValue<T>(key) : default;
-        }
-        
-        protected T GetBlackboardValue<T>(string key, T defaultValue)
-        {
-            if (Blackboard == null)
-            {
-                return defaultValue;
-            }
-            
-            return Blackboard.GetValue(key, defaultValue) ?? defaultValue;
-        }
-        
-        protected bool HasBlackboardKey(string key)
-        {
-            return Blackboard?.HasKey(key) ?? false;
         }
 
         public NodeState Update()

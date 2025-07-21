@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Dynamis.Behaviours.Runtimes.Blackboards;
 using UnityEngine;
 
 namespace Dynamis.Behaviours.Runtimes
@@ -16,7 +17,7 @@ namespace Dynamis.Behaviours.Runtimes
         [SerializeField] private Node rootNode;
         [SerializeField] private List<Node> nodes = new();
         [SerializeField] private NodeState treeState = NodeState.Running;
-        [SerializeField] private Blackboard blackboard = new Blackboard();
+        [SerializeField] private Blackboard blackboard = new();
 
         public Node RootNode 
         { 
@@ -31,7 +32,9 @@ namespace Dynamis.Behaviours.Runtimes
         public void Reset()
         {
             if (rootNode != null)
+            {
                 rootNode.Reset();
+            }
             // Reset blackboard if needed
             // blackboard.Clear(); // Uncomment if you want to clear blackboard on reset
         }
@@ -157,7 +160,7 @@ namespace Dynamis.Behaviours.Runtimes
             var tree = Instantiate(this);
             tree.rootNode = rootNode?.Clone();
             tree.nodes = new List<Node>();
-            tree.blackboard = blackboard.Clone(); // Clone the blackboard data
+            tree.blackboard = blackboard.Clone();
 
             if (tree.rootNode != null)
             {
