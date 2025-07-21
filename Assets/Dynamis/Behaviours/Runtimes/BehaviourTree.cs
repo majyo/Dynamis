@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
-using System;
 
 namespace Dynamis.Behaviours.Runtimes
 {
-    public enum TraversalOrder
+    public enum SearchStrategy
     {
-        Bfs,  // 广度优先搜索
-        Dfs   // 深度优先搜索
+        Bfs,
+        Dfs
     }
 
     [CreateAssetMenu(fileName = "New Behaviour Tree", menuName = "Dynamis/Behaviour Tree")]
@@ -16,15 +16,21 @@ namespace Dynamis.Behaviours.Runtimes
         [SerializeField] private Node rootNode;
         [SerializeField] private List<Node> nodes = new();
         [SerializeField] private NodeState treeState = NodeState.Running;
-        
+
         public Node RootNode 
         { 
             get => rootNode; 
             set => rootNode = value; 
         }
-        
+
         public List<Node> Nodes => nodes;
         public NodeState TreeState => treeState;
+
+        public void Reset()
+        {
+            if (rootNode != null)
+                rootNode.Reset();
+        }
 
         public NodeState Update()
         {
@@ -49,18 +55,12 @@ namespace Dynamis.Behaviours.Runtimes
             nodes.Remove(node);
         }
 
-        public void Reset()
-        {
-            if (rootNode != null)
-                rootNode.Reset();
-        }
-
-        public void Traverse(Action<Node> action, TraversalOrder order = TraversalOrder.Bfs)
+        public void Traverse(Action<Node> action, SearchStrategy order = SearchStrategy.Bfs)
         {
             if (rootNode == null || action == null)
                 return;
 
-            if (order == TraversalOrder.Bfs)
+            if (order == SearchStrategy.Bfs)
             {
                 TraverseBfs(action);
             }
