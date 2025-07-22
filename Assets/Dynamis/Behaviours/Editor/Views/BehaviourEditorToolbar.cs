@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -5,6 +6,19 @@ namespace Dynamis.Behaviours.Editor.Views
 {
     public class BehaviourEditorToolbar : VisualElement
     {
+        public event Action OnNewClicked;
+        public event Action OnOpenClicked;
+        public event Action OnSaveClicked;
+        public event Action OnUndoClicked;
+        public event Action OnRedoClicked;
+        public event Action OnDeleteClicked;
+        public event Action OnFitAllClicked;
+        public event Action OnToggleGridClicked;
+        public event Action OnPlayClicked;
+        public event Action OnPauseClicked;
+        public event Action OnStopClicked;
+        public event Action OnHelpClicked;
+        
         public BehaviourEditorToolbar()
         {
             SetupToolbar();
@@ -46,35 +60,34 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             // 新建按钮
             var newButton = CreateToolbarButton("New", "Create a new behaviour tree");
-            newButton.clicked += OnNewClicked;
+            newButton.clicked += () => OnNewClicked?.Invoke();
             Add(newButton);
             
             // 打开按钮
             var openButton = CreateToolbarButton("Open", "Open an existing behaviour tree");
-            openButton.clicked += OnOpenClicked;
+            openButton.clicked += () => OnOpenClicked?.Invoke();
             Add(openButton);
             
             // 保存按钮
             var saveButton = CreateToolbarButton("Save", "Save current behaviour tree");
-            saveButton.clicked += OnSaveClicked;
-            Add(saveButton);
+            saveButton.clicked += () => OnSaveClicked?.Invoke();
         }
         
         private void CreateEditSection()
         {
             // 撤销按钮
             var undoButton = CreateToolbarButton("Undo", "Undo last action");
-            undoButton.clicked += OnUndoClicked;
+            undoButton.clicked += () => OnUndoClicked?.Invoke();
             Add(undoButton);
             
             // 重做按钮
             var redoButton = CreateToolbarButton("Redo", "Redo last undone action");
-            redoButton.clicked += OnRedoClicked;
+            redoButton.clicked += () => OnRedoClicked?.Invoke();
             Add(redoButton);
             
             // 删除按钮
             var deleteButton = CreateToolbarButton("Delete", "Delete selected nodes");
-            deleteButton.clicked += OnDeleteClicked;
+            deleteButton.clicked += () => OnDeleteClicked?.Invoke();
             Add(deleteButton);
         }
         
@@ -82,12 +95,12 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             // 缩放适应按钮
             var fitButton = CreateToolbarButton("Fit All", "Fit all nodes in view");
-            fitButton.clicked += OnFitAllClicked;
+            fitButton.clicked += () => OnFitAllClicked?.Invoke();
             Add(fitButton);
             
             // 网格切换按钮
             var gridButton = CreateToolbarButton("Grid", "Toggle grid visibility");
-            gridButton.clicked += OnToggleGridClicked;
+            gridButton.clicked += () => OnToggleGridClicked?.Invoke();
             Add(gridButton);
         }
         
@@ -96,18 +109,18 @@ namespace Dynamis.Behaviours.Editor.Views
             // 播放按钮
             var playButton = CreateToolbarButton("▶ Play", "Start behaviour tree execution");
             playButton.style.backgroundColor = new Color(0.2f, 0.6f, 0.2f, 0.3f);
-            playButton.clicked += OnPlayClicked;
+            playButton.clicked += () => OnPlayClicked?.Invoke();
             Add(playButton);
             
             // 暂停按钮
             var pauseButton = CreateToolbarButton("⏸ Pause", "Pause behaviour tree execution");
-            pauseButton.clicked += OnPauseClicked;
+            pauseButton.clicked += () => OnPauseClicked?.Invoke();
             Add(pauseButton);
             
             // 停止按钮
             var stopButton = CreateToolbarButton("⏹ Stop", "Stop behaviour tree execution");
             stopButton.style.backgroundColor = new Color(0.6f, 0.2f, 0.2f, 0.3f);
-            stopButton.clicked += OnStopClicked;
+            stopButton.clicked += () => OnStopClicked?.Invoke();
             Add(stopButton);
         }
         
@@ -115,7 +128,7 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             // 帮助按钮
             var helpButton = CreateToolbarButton("?", "Show help documentation");
-            helpButton.clicked += OnHelpClicked;
+            helpButton.clicked += () => OnHelpClicked?.Invoke();
             Add(helpButton);
         }
         
@@ -179,19 +192,5 @@ namespace Dynamis.Behaviours.Editor.Views
             };
             Add(separator);
         }
-        
-        // 按钮事件处理方法
-        private void OnNewClicked() => Debug.Log("New behaviour tree");
-        private void OnOpenClicked() => Debug.Log("Open behaviour tree");
-        private void OnSaveClicked() => Debug.Log("Save behaviour tree");
-        private void OnUndoClicked() => Debug.Log("Undo action");
-        private void OnRedoClicked() => Debug.Log("Redo action");
-        private void OnDeleteClicked() => Debug.Log("Delete selected nodes");
-        private void OnFitAllClicked() => Debug.Log("Fit all nodes in view");
-        private void OnToggleGridClicked() => Debug.Log("Toggle grid visibility");
-        private void OnPlayClicked() => Debug.Log("Start execution");
-        private void OnPauseClicked() => Debug.Log("Pause execution");
-        private void OnStopClicked() => Debug.Log("Stop execution");
-        private void OnHelpClicked() => Debug.Log("Show help");
     }
 }

@@ -60,6 +60,8 @@ namespace Dynamis.Behaviours.Editor
         
         private void AddSampleNodes()
         {
+            _toolbar.OnNewClicked += () => Debug.Log("New clicked");
+            
             var rootNode = new NodeElement("Root", "Behaviour tree root node", false, true);
             _nodeCanvasPanel.AddNode(rootNode, new Vector2(200, 50));
             
