@@ -1,16 +1,37 @@
 using System;
 using System.Collections.Generic;
+using Frameworks.Structures.SerializableDictionary;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Dynamis.Blackboards
 {
+    public class RuntimeValue<T>
+    {
+        public Type Type { get; }
+        public T Value { get; set; }
+        
+        public RuntimeValue(T value)
+        {
+            Value = value;
+            Type = typeof(T);
+        }
+    }
+    
+    // 用于序列化任意类型的包装器
     [Serializable]
-    public class BlackboardEntry
+    public class SerializableWrapper<T>
+    {
+        public T value;
+    }
+    
+    [Serializable]
+    public class SerializedBlackboardEntry
     {
         [SerializeField] private string key;
         [SerializeField] private string type;
         [SerializeField] private string value;
+        
+        private object _runtimeValue;
         
         public string Key 
         { 
@@ -30,148 +51,281 @@ namespace Dynamis.Blackboards
             set => this.value = value; 
         }
         
-        public BlackboardEntry(string key, string type, string value)
+        public SerializedBlackboardEntry(string key, string type, string value)
         {
             this.key = key;
             this.type = type;
             this.value = value;
+        }
+        
+        public bool TryGetValue<T>(out T outValue)
+        {
+            try
+            {
+                var wrapper = JsonUtility.FromJson<SerializableWrapper<T>>(value);
+                outValue = wrapper.value;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Failed to deserialize value for key '{key}': {ex.Message}");
+                outValue = default;
+                return false;
+            }
+        }
+
+        public bool TryGetValueRuntime<T>(out T outValue)
+        {
+            if (_runtimeValue is RuntimeValue<T> typedRuntimeValue)
+            {
+                outValue = typedRuntimeValue.Value;
+                return true;
+            }
+
+            try
+            {
+                var wrapper = JsonUtility.FromJson<SerializableWrapper<T>>(value);
+                _runtimeValue = new RuntimeValue<T>(wrapper.value);
+                outValue = wrapper.value;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Failed to deserialize value for key '{key}': {ex.Message}");
+                outValue = default;
+                return false;
+            }
+        }
+        
+        public void SetValue<T>(T newValue)
+        {
+            try
+            {
+                var wrapper = new SerializableWrapper<T> { value = newValue };
+                value = JsonUtility.ToJson(wrapper);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"Failed to serialize value for key '{key}': {ex.Message}");
+            }
+        }
+        
+        public void SetValueRuntime<T>(T newValue)
+        {
+            if (_runtimeValue is RuntimeValue<T> typedRuntimeValue)
+            {
+                typedRuntimeValue.Value = newValue;
+            }
+            else
+            {
+                _runtimeValue = new RuntimeValue<T>(newValue);
+            }
+        }
+        
+        public void DirectSetRuntimeValue(object runtimeValue)
+        {
+            _runtimeValue = runtimeValue;
         }
     }
 
     [CreateAssetMenu(fileName = "New Blackboard", menuName = "Dynamis/Blackboard")]
     public class Blackboard : ScriptableObject
     {
-        [SerializeField] private List<BlackboardEntry> _entries = new();
-        private readonly Dictionary<string, BlackboardEntry> _entryCache = new();
+        [SerializeField] private SerializableDictionary<string, SerializedBlackboardEntry> _entries = new();
+        [SerializeField] private bool _serializeWhenEditorPlaying;
         
-        public List<BlackboardEntry> Entries => _entries;
-        
-        private void OnEnable()
-        {
-            RebuildCache();
-        }
-        
-        private void RebuildCache()
-        {
-            _entryCache.Clear();
-            
-            foreach (var entry in _entries)
-            {
-                if (!string.IsNullOrEmpty(entry.Key))
-                {
-                    _entryCache[entry.Key] = entry;
-                }
-            }
-        }
-        
+        public SerializableDictionary<string, SerializedBlackboardEntry> Entry => _entries;
+
         public void SetValue<T>(string key, T value)
         {
-            string serializedValue = JsonUtility.ToJson(new SerializableWrapper<T> { value = value });
-            string typeName = typeof(T).AssemblyQualifiedName;
-            
-            if (_entryCache.ContainsKey(key))
+#if UNITY_EDITOR
+            if (_serializeWhenEditorPlaying && Application.isPlaying)
             {
-                _entryCache[key].Type = typeName;
-                _entryCache[key].Value = serializedValue;
+                SetValue_Editor(key, value);
             }
             else
             {
-                var newEntry = new BlackboardEntry(key, typeName, serializedValue);
-                _entries.Add(newEntry);
-                _entryCache[key] = newEntry;
+                SetValue_Runtime(key, value);
             }
+#else
+            SetValue_Runtime(key, value);
+#endif
         }
         
-        public T GetValue<T>(string key, T defaultValue = default(T))
+        public T GetValue<T>(string key, T defaultValue = default)
         {
-            if (_entryCache.ContainsKey(key))
+#if UNITY_EDITOR
+            if (_serializeWhenEditorPlaying && Application.isPlaying)
             {
-                try
-                {
-                    var wrapper = JsonUtility.FromJson<SerializableWrapper<T>>(_entryCache[key].Value);
-                    return wrapper.value;
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogWarning($"Failed to deserialize value for key '{key}': {ex.Message}");
-                }
+                return GetValue_Editor(key, defaultValue);
             }
-            
-            return defaultValue;
+
+            return GetValue_Runtime(key, defaultValue);
+#else
+            return GetValue_Runtime(key, defaultValue);
+#endif
+        }
+        
+        /// <summary>
+        /// Bake all serialized values to runtime values.
+        /// <remarks>
+        /// This method uses json deserialization and runtime reflection to convert serialized values into runtime values.
+        /// It is extremely time-consuming and should only be used during initialization or when necessary.
+        /// </remarks>
+        /// </summary>
+        public void BakeValuesToRuntime()
+        {
+            foreach (var pair in _entries)
+            {
+                var entry = pair.Value;
+                var valueType = Type.GetType(entry.Type);
+                
+                if (valueType == null)
+                {
+                    Debug.LogWarning($"Type '{entry.Type}' for key '{entry.Key}' not found. Skipping entry.");
+                    continue;
+                }
+                
+                var wrapperType = typeof(SerializableWrapper<>).MakeGenericType(valueType);
+                var wrapperInstance = JsonUtility.FromJson(entry.Value, wrapperType);
+
+                if (wrapperInstance == null)
+                {
+                    Debug.LogWarning($"Failed to deserialize value for key '{entry.Key}'. Skipping entry.");
+                    continue;
+                }
+
+                var valueField = wrapperType.GetField("value");
+                var value = valueField?.GetValue(wrapperInstance);
+                var runtimeValueType = typeof(RuntimeValue<>).MakeGenericType(valueType);
+                var runtimeValueInstance = Activator.CreateInstance(runtimeValueType, value);
+                entry.DirectSetRuntimeValue(runtimeValueInstance);
+            }
         }
         
         public bool HasKey(string key)
         {
-            return _entryCache.ContainsKey(key);
+            return _entries.ContainsKey(key);
         }
         
         public bool RemoveKey(string key)
         {
-            if (_entryCache.ContainsKey(key))
-            {
-                var entry = _entryCache[key];
-                _entries.Remove(entry);
-                _entryCache.Remove(key);
-                return true;
-            }
-            
-            return false;
+            return _entries.Remove(key);
         }
         
         public void Clear()
         {
             _entries.Clear();
-            _entryCache.Clear();
         }
-        
-        public string[] GetAllKeys()
+
+        public int GetAllKeys(List<string> keys)
         {
-            var keys = new string[_entryCache.Count];
-            _entryCache.Keys.CopyTo(keys, 0);
+            if (keys == null)
+            {
+                Debug.LogError("The key list for retrieving all keys is null.");
+                return -1;
+            }
+
+            keys.Clear();
+            
+            foreach (var key in _entries.Keys)
+            {
+                keys.Add(key);
+            }
+            
+            return keys.Count;
+        }
+
+        public string[] GetAllKeysCopy()
+        {
+            var keys = new string[_entries.Count];
+            _entries.Keys.CopyTo(keys, 0);
             return keys;
         }
         
-        // 用于序列化任意类型的包装器
-        [Serializable]
-        private class SerializableWrapper<T>
-        {
-            public T value;
-        }
-        
-        // Editor相关方法
         public void AddEntry(string key, string type, string value)
         {
-            if (string.IsNullOrEmpty(key)) return;
-            
-            if (_entryCache.ContainsKey(key))
+            if (string.IsNullOrEmpty(key))
             {
-                _entryCache[key].Type = type;
-                _entryCache[key].Value = value;
+                return;
+            }
+            
+            if (_entries.ContainsKey(key))
+            {
+                _entries[key].Type = type;
+                _entries[key].Value = value;
             }
             else
             {
-                var newEntry = new BlackboardEntry(key, type, value);
-                _entries.Add(newEntry);
-                _entryCache[key] = newEntry;
+                var newEntry = new SerializedBlackboardEntry(key, type, value);
+                _entries[key] = newEntry;
             }
         }
-        
-        public void RemoveEntryAt(int index)
+
+        public void RemoveEntry(string key)
         {
-            if (index >= 0 && index < _entries.Count)
+            if (string.IsNullOrEmpty(key))
             {
-                var entry = _entries[index];
-                if (!string.IsNullOrEmpty(entry.Key) && _entryCache.ContainsKey(entry.Key))
-                {
-                    _entryCache.Remove(entry.Key);
-                }
-                _entries.RemoveAt(index);
+                return;
+            }
+
+            _entries.Remove(key);
+        }
+
+        private void SetValue_Editor<T>(string key, T value)
+        {
+            var serializedValue = JsonUtility.ToJson(new SerializableWrapper<T> { value = value });
+            var typeName = typeof(T).AssemblyQualifiedName;
+
+            if (_entries.ContainsKey(key))
+            {
+                _entries[key].Type = typeName;
+                _entries[key].Value = serializedValue;
+            }
+            else
+            {
+                var newEntry = new SerializedBlackboardEntry(key, typeName, serializedValue);
+                _entries[key] = newEntry;
             }
         }
-        
-        public void ValidateEntries()
+
+        private void SetValue_Runtime<T>(string key, T value)
         {
-            RebuildCache();
+            if (!_entries.ContainsKey(key))
+            {
+                var newEntry = new SerializedBlackboardEntry(key, typeof(T).AssemblyQualifiedName, string.Empty);
+                newEntry.SetValueRuntime(value);
+                _entries[key] = newEntry;
+            }
+            else
+            {
+                _entries[key].SetValueRuntime(value);
+            }
+        }
+
+        private T GetValue_Editor<T>(string key, T defaultValue = default)
+        {
+            if (!_entries.TryGetValue(key, out var entry))
+            {
+                return defaultValue;
+            }
+            
+            return entry.TryGetValue<T>(out var serializedValue) ? serializedValue : defaultValue;
+        }
+
+        private T GetValue_Runtime<T>(string key, T defaultValue = default)
+        {
+            if (!_entries.TryGetValue(key, out var entry))
+            {
+                return defaultValue;
+            }
+
+            if (entry.TryGetValueRuntime<T>(out var runtimeValue))
+            {
+                return runtimeValue;
+            }
+            
+            return entry.TryGetValue<T>(out var serializedValue) ? serializedValue : defaultValue;
         }
     }
 }

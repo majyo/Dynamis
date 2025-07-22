@@ -75,7 +75,7 @@ namespace Dynamis.Blackboards
             }
             
             // 获取所有键
-            string[] allKeys = blackboard.GetAllKeys();
+            string[] allKeys = blackboard.GetAllKeysCopy();
             Debug.Log($"Blackboard中共有 {allKeys.Length} 个键: {string.Join(", ", allKeys)}");
         }
         
