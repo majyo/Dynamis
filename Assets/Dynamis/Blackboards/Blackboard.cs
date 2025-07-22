@@ -248,19 +248,29 @@ namespace Dynamis.Blackboards
                     continue;
                 }
                 
-                var wrapperType = typeof(SerializableWrapper<>).MakeGenericType(valueType);
-                var wrapperInstance = JsonUtility.FromJson(entry.Value, wrapperType);
+                object retrievedValue = null;
 
-                if (wrapperInstance == null)
+                if (typeof(UnityEngine.Object).IsAssignableFrom(valueType))
                 {
-                    Debug.LogWarning($"Failed to deserialize value for key '{entry.Key}'. Skipping entry.");
-                    continue;
+                    retrievedValue = entry.ObjectReference;
+                }
+                else
+                {
+                    var wrapperType = typeof(SerializableWrapper<>).MakeGenericType(valueType);
+                    var wrapperInstance = JsonUtility.FromJson(entry.Value, wrapperType);
+
+                    if (wrapperInstance == null)
+                    {
+                        Debug.LogWarning($"Failed to deserialize value for key '{entry.Key}'. Skipping entry.");
+                        continue;
+                    }
+
+                    var valueField = wrapperType.GetField("value");
+                    retrievedValue = valueField?.GetValue(wrapperInstance);
                 }
 
-                var valueField = wrapperType.GetField("value");
-                var value = valueField?.GetValue(wrapperInstance);
                 var runtimeValueType = typeof(RuntimeValue<>).MakeGenericType(valueType);
-                var runtimeValueInstance = Activator.CreateInstance(runtimeValueType, value);
+                var runtimeValueInstance = Activator.CreateInstance(runtimeValueType, retrievedValue);
                 entry.DirectSetRuntimeValue(runtimeValueInstance);
             }
         }
