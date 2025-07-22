@@ -51,8 +51,6 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void OnGenerateVisualContent(MeshGenerationContext context)
         {
-            Debug.Log("Repaint ConnectionRenderer");
-            
             var painter = context.painter2D;
             
             // 绘制已有的连线
@@ -64,8 +62,6 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private static void DrawConnection(Painter2D painter, Connection connection)
         {
-            Debug.Log($"Drawing connection from {connection.GetStartPoint()} to {connection.GetEndPoint()} with color {connection.ConnectionColor}");
-            
             var startPoint = connection.GetStartPoint();
             var endPoint = connection.GetEndPoint();
             
