@@ -1,4 +1,4 @@
-﻿using Dynamis.Behaviours.Runtimes.Blackboards;
+﻿// using Dynamis.Behaviours.Runtimes.Blackboards;
 using UnityEngine;
 
 namespace Dynamis.Behaviours.Runtimes
@@ -38,7 +38,7 @@ namespace Dynamis.Behaviours.Runtimes
 
         public NodeState State => state;
         public BehaviourTree Tree => tree;
-        protected Blackboard Blackboard => tree?.Blackboard;
+        // protected Blackboard Blackboard => tree?.Blackboard;
         
         public NodeState Update()
         {

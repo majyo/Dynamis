@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Dynamis.Behaviours.Runtimes.Blackboards;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,7 +11,7 @@ namespace Dynamis.Behaviours.Runtimes
         private List<ScriptableObject> Assets => _assets ??= new List<ScriptableObject>();
         
         private BehaviourTree _tree;
-        private Blackboard _blackboard; 
+        // private Blackboard _blackboard; 
         
         public void AddSubAsset(ScriptableObject subAsset)
         {
