@@ -9,6 +9,7 @@ namespace Dynamis.Behaviours.Editor.Views
     public class NodeCanvasPanel : VisualElement
     {
         private Vector2 _canvasOffset = Vector2.zero;
+        private VisualElement _lineRendererContainer;
         private VisualElement _contentContainer;
 
         private NodeElement _mouseHoveredNode;
@@ -141,6 +142,21 @@ namespace Dynamis.Behaviours.Editor.Views
             style.minHeight = 200; // 最小高度
 
             style.overflow = Overflow.Hidden;
+            
+            _lineRendererContainer = new VisualElement
+            {
+                name = "line-renderer-container",
+                style =
+                {
+                    position = Position.Absolute,
+                    left = 0,
+                    top = 0,
+                    width = Length.Percent(100),
+                    height = Length.Percent(100)
+                },
+                pickingMode = PickingMode.Ignore
+            };
+            Add(_lineRendererContainer);
 
             // 创建内容容器，用于承载所有节点
             _contentContainer = new VisualElement
@@ -159,7 +175,7 @@ namespace Dynamis.Behaviours.Editor.Views
 
             // 创建连线渲染器
             _connectionRenderer = new ConnectionRenderer();
-            _contentContainer.Add(_connectionRenderer);
+            _lineRendererContainer.Add(_connectionRenderer);
 
             _draggingToPort = new DummyPort();
         }
