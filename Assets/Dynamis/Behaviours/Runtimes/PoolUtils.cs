@@ -8,7 +8,7 @@ namespace Dynamis.Behaviours.Runtimes
     /// </summary>
     public static class PoolUtils
     {
-        // Object pool for Queue&lt;Node&gt;
+        // Object pool for Queue<Node>
         private static readonly ObjectPool<Queue<Node>> QueuePool = new(
             createFunc: () => new Queue<Node>(),
             actionOnGet: queue => queue.Clear(),
