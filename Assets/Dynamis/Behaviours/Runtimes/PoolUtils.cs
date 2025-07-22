@@ -30,7 +30,7 @@ namespace Dynamis.Behaviours.Runtimes
             maxSize: 100
         );
 
-        // Object pool for List&lt;Node&gt;
+        // Object pool for List<Node>
         private static readonly ObjectPool<List<Node>> ListPool = new(
             createFunc: () => new List<Node>(),
             actionOnGet: list => list.Clear(),
