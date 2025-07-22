@@ -19,7 +19,7 @@ namespace Dynamis.Behaviours.Runtimes
             maxSize: 100
         );
 
-        // Object pool for Stack&lt;Node&gt;
+        // Object pool for Stack<Node>
         private static readonly ObjectPool<Stack<Node>> StackPool = new(
             createFunc: () => new Stack<Node>(),
             actionOnGet: stack => stack.Clear(),
