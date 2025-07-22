@@ -41,7 +41,6 @@ namespace Dynamis.Behaviours.Editor
             
             SetupNodeCanvas();
             
-            // 添加示例
             AddSampleNodes();
             CreateSampleConnections();
         }
@@ -61,21 +60,15 @@ namespace Dynamis.Behaviours.Editor
         
         private void AddSampleNodes()
         {
-            // 创建几个示例节点来展示效果
-
-            // Root节点 - 只有输出端口
             var rootNode = new BehaviourNode("Root", "Behaviour tree root node", false, true);
             _nodeCanvasPanel.AddNode(rootNode, new Vector2(200, 50));
-
-            // Selector节点 - 有输入和输出端口
+            
             var selectorNode = new BehaviourNode("Selector", "Select first successful child");
             _nodeCanvasPanel.AddNode(selectorNode, new Vector2(150, 180));
 
-            // Sequence节点 - 有输入和输出端口
             var sequenceNode = new BehaviourNode("Sequence", "Execute children in order");
             _nodeCanvasPanel.AddNode(sequenceNode, new Vector2(250, 180));
 
-            // Action节点 - 只有输入端口
             var actionNode1 = new BehaviourNode("Move To Target", "Move character to target position", true, false);
             _nodeCanvasPanel.AddNode(actionNode1, new Vector2(100, 310));
 
@@ -85,7 +78,6 @@ namespace Dynamis.Behaviours.Editor
             var actionNode3 = new BehaviourNode("Wait", "Wait for specified duration", true, false);
             _nodeCanvasPanel.AddNode(actionNode3, new Vector2(300, 310));
 
-            // 存储节点引用以便创建连线
             _sampleNodes = new Dictionary<string, BehaviourNode>
             {
                 ["root"] = rootNode,
@@ -99,10 +91,8 @@ namespace Dynamis.Behaviours.Editor
         
         private void CreateSampleConnections()
         {
-            // 等待一帧确保节点位置已确定
             rootVisualElement.schedule.Execute(() =>
             {
-                // Root 连接到 Selector
                 var connection1 =
                     new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
                     {
@@ -111,7 +101,6 @@ namespace Dynamis.Behaviours.Editor
                     };
                 _nodeCanvasPanel.AddConnection(connection1);
 
-                // Root 连接到 Sequence
                 var connection2 =
                     new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
                     {
@@ -120,7 +109,6 @@ namespace Dynamis.Behaviours.Editor
                     };
                 _nodeCanvasPanel.AddConnection(connection2);
 
-                // Selector 连接到 Move To Target
                 var connection3 = new Connection(_sampleNodes["selector"].OutputPort,
                     _sampleNodes["moveToTarget"].InputPort)
                 {
@@ -129,7 +117,6 @@ namespace Dynamis.Behaviours.Editor
                 };
                 _nodeCanvasPanel.AddConnection(connection3);
 
-                // Selector 连接到 Attack Enemy
                 var connection4 = new Connection(_sampleNodes["selector"].OutputPort,
                     _sampleNodes["attackEnemy"].InputPort)
                 {
@@ -138,7 +125,6 @@ namespace Dynamis.Behaviours.Editor
                 };
                 _nodeCanvasPanel.AddConnection(connection4);
 
-                // Sequence 连接到 Wait
                 var connection5 =
                     new Connection(_sampleNodes["sequence"].OutputPort, _sampleNodes["wait"].InputPort)
                     {
