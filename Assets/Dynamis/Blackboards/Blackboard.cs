@@ -268,6 +268,12 @@ namespace Dynamis.Blackboards
                     var valueField = wrapperType.GetField("value");
                     retrievedValue = valueField?.GetValue(wrapperInstance);
                 }
+                
+                if (retrievedValue == null)
+                {
+                    Debug.LogWarning($"Retrieved value for key '{entry.Key}' is null. Skipping entry.");
+                    continue;
+                }
 
                 var runtimeValueType = typeof(RuntimeValue<>).MakeGenericType(valueType);
                 var runtimeValueInstance = Activator.CreateInstance(runtimeValueType, retrievedValue);
