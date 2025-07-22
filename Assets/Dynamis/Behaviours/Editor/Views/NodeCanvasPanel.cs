@@ -448,5 +448,32 @@ namespace Dynamis.Behaviours.Editor.Views
                 port.SetSnapHighlight(highlight);
             }
         }
+
+        public void ClearAll()
+        {
+            // 清除所有节点
+            _contentContainer.Clear();
+
+            // 清除所有连接
+            _connections.Clear();
+            _connectionRenderer.ClearConnections();
+
+            // 清除选中状态
+            ClearSelection();
+
+            // 清除鼠标悬停节点
+            MouseHoveredNode = null;
+
+            // 清除拖拽状态
+            ClearDraggingConnection();
+
+            // 清除右键菜单
+            if (_contextMenu != null)
+            {
+                _contextMenu.Hide();
+                Remove(_contextMenu);
+                _contextMenu = null;
+            }
+        }
     }
 }
