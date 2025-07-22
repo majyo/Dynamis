@@ -30,6 +30,8 @@ namespace Dynamis.Blackboards
         [SerializeField] private string key;
         [SerializeField] private string type;
         [SerializeField] private string value;
+        // 添加对UnityEngine.Object类型的支持
+        [SerializeField] private UnityEngine.Object objectReference;
         
         private object _runtimeValue;
         
@@ -50,16 +52,44 @@ namespace Dynamis.Blackboards
             get => value; 
             set => this.value = value; 
         }
+
+        public UnityEngine.Object ObjectReference
+        {
+            get => objectReference;
+            set => objectReference = value;
+        }
         
         public SerializedBlackboardEntry(string key, string type, string value)
         {
             this.key = key;
             this.type = type;
             this.value = value;
+            this.objectReference = null;
+        }
+
+        // 专门为UnityEngine.Object类型的构造函数
+        public SerializedBlackboardEntry(string key, string type, UnityEngine.Object objRef)
+        {
+            this.key = key;
+            this.type = type;
+            this.value = "";
+            this.objectReference = objRef;
         }
         
         public bool TryGetValue<T>(out T outValue)
         {
+            // 检查是否是UnityEngine.Object类型
+            if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
+            {
+                if (objectReference != null && objectReference is T obj)
+                {
+                    outValue = obj;
+                    return true;
+                }
+                outValue = default;
+                return false;
+            }
+
             try
             {
                 var wrapper = JsonUtility.FromJson<SerializableWrapper<T>>(value);
@@ -82,6 +112,19 @@ namespace Dynamis.Blackboards
                 return true;
             }
 
+            // 检查是否是UnityEngine.Object类型
+            if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
+            {
+                if (objectReference != null && objectReference is T obj)
+                {
+                    _runtimeValue = new RuntimeValue<T>(obj);
+                    outValue = obj;
+                    return true;
+                }
+                outValue = default;
+                return false;
+            }
+
             try
             {
                 var wrapper = JsonUtility.FromJson<SerializableWrapper<T>>(value);
@@ -99,6 +142,13 @@ namespace Dynamis.Blackboards
         
         public void SetValue<T>(T newValue)
         {
+            // 检查是否是UnityEngine.Object类型
+            if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
+            {
+                objectReference = newValue as UnityEngine.Object;
+                return;
+            }
+
             try
             {
                 var wrapper = new SerializableWrapper<T> { value = newValue };
@@ -115,10 +165,22 @@ namespace Dynamis.Blackboards
             if (_runtimeValue is RuntimeValue<T> typedRuntimeValue)
             {
                 typedRuntimeValue.Value = newValue;
+                
+                // 如果是UnityEngine.Object类型，同时更新objectReference
+                if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
+                {
+                    objectReference = newValue as UnityEngine.Object;
+                }
             }
             else
             {
                 _runtimeValue = new RuntimeValue<T>(newValue);
+                
+                // 如果是UnityEngine.Object类型，同时更新objectReference
+                if (typeof(UnityEngine.Object).IsAssignableFrom(typeof(T)))
+                {
+                    objectReference = newValue as UnityEngine.Object;
+                }
             }
         }
         
@@ -272,60 +334,52 @@ namespace Dynamis.Blackboards
             _entries.Remove(key);
         }
 
-        private void SetValue_Editor<T>(string key, T value)
+        private void SetValue_Runtime<T>(string key, T value)
         {
-            var serializedValue = JsonUtility.ToJson(new SerializableWrapper<T> { value = value });
-            var typeName = typeof(T).AssemblyQualifiedName;
-
             if (_entries.ContainsKey(key))
             {
-                _entries[key].Type = typeName;
-                _entries[key].Value = serializedValue;
+                _entries[key].SetValueRuntime(value);
             }
             else
             {
-                var newEntry = new SerializedBlackboardEntry(key, typeName, serializedValue);
-                _entries[key] = newEntry;
+                var typeName = typeof(T).AssemblyQualifiedName;
+                var entry = new SerializedBlackboardEntry(key, typeName, "");
+                entry.SetValueRuntime(value);
+                _entries.Add(key, entry);
             }
         }
 
-        private void SetValue_Runtime<T>(string key, T value)
+        private T GetValue_Runtime<T>(string key, T defaultValue = default)
         {
-            if (!_entries.ContainsKey(key))
+            if (_entries.ContainsKey(key) && _entries[key].TryGetValueRuntime<T>(out var value))
             {
-                var newEntry = new SerializedBlackboardEntry(key, typeof(T).AssemblyQualifiedName, string.Empty);
-                newEntry.SetValueRuntime(value);
-                _entries[key] = newEntry;
+                return value;
+            }
+            return defaultValue;
+        }
+
+        private void SetValue_Editor<T>(string key, T value)
+        {
+            if (_entries.ContainsKey(key))
+            {
+                _entries[key].SetValue(value);
             }
             else
             {
-                _entries[key].SetValueRuntime(value);
+                var typeName = typeof(T).AssemblyQualifiedName;
+                var entry = new SerializedBlackboardEntry(key, typeName, "");
+                entry.SetValue(value);
+                _entries.Add(key, entry);
             }
         }
 
         private T GetValue_Editor<T>(string key, T defaultValue = default)
         {
-            if (!_entries.TryGetValue(key, out var entry))
+            if (_entries.ContainsKey(key) && _entries[key].TryGetValue<T>(out var value))
             {
-                return defaultValue;
+                return value;
             }
-            
-            return entry.TryGetValue<T>(out var serializedValue) ? serializedValue : defaultValue;
-        }
-
-        private T GetValue_Runtime<T>(string key, T defaultValue = default)
-        {
-            if (!_entries.TryGetValue(key, out var entry))
-            {
-                return defaultValue;
-            }
-
-            if (entry.TryGetValueRuntime<T>(out var runtimeValue))
-            {
-                return runtimeValue;
-            }
-            
-            return entry.TryGetValue<T>(out var serializedValue) ? serializedValue : defaultValue;
+            return defaultValue;
         }
     }
 }
