@@ -11,7 +11,7 @@ namespace Dynamis.Behaviours.Runtimes
     }
 
     [System.Serializable]
-    public abstract class Node : ScriptableObject
+    public abstract class Node : ScriptableObject, IGraphNode
     {
         [SerializeField] protected string guid;
         [SerializeField] protected Vector2 position;
@@ -38,16 +38,8 @@ namespace Dynamis.Behaviours.Runtimes
 
         public NodeState State => state;
         public BehaviourTree Tree => tree;
-        
-        // Blackboard access properties and methods
         protected Blackboard Blackboard => tree?.Blackboard;
         
-        // Convenient blackboard access methods
-        protected void SetBlackboardValue<T>(string key, T value)
-        {
-            Blackboard?.SetValue(key, value);
-        }
-
         public NodeState Update()
         {
             if (!started)
@@ -66,8 +58,8 @@ namespace Dynamis.Behaviours.Runtimes
 
             return state;
         }
-
-        public virtual void Reset()
+        
+        public virtual void ResetNode()
         {
             state = NodeState.Running;
             started = false;
@@ -84,6 +76,14 @@ namespace Dynamis.Behaviours.Runtimes
             Node clone = Instantiate(this);
             clone.guid = System.Guid.NewGuid().ToString();
             return clone;
+        }
+        
+        public void AddToAsset(ScriptableObject asset)
+        {
+        }
+
+        public void RemoveFromAsset(ScriptableObject asset)
+        {
         }
 
         protected virtual void OnStart() { }

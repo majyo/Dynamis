@@ -32,7 +32,7 @@ namespace Dynamis.Behaviours.Runtimes
         {
             if (rootNode != null)
             {
-                rootNode.Reset();
+                rootNode.ResetNode();
             }
             // Reset blackboard if needed
             // blackboard.Clear(); // Uncomment if you want to clear blackboard on reset

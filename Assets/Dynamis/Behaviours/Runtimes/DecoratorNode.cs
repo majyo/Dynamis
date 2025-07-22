@@ -17,10 +17,10 @@ namespace Dynamis.Behaviours.Runtimes
             } 
         }
 
-        public override void Reset()
+        public override void ResetNode()
         {
-            base.Reset();
-            child?.Reset();
+            base.ResetNode();
+            child?.ResetNode();
         }
 
         public override Node Clone()

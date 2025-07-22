@@ -35,7 +35,7 @@ namespace Dynamis.Behaviours.Runtimes
                         if (maxRepeats > 0 && _currentRepeats >= maxRepeats)
                             return NodeState.Success;
                         
-                        child.Reset();
+                        child.ResetNode();
                         return NodeState.Running;
                     }
                     return NodeState.Success;
@@ -47,7 +47,7 @@ namespace Dynamis.Behaviours.Runtimes
                         if (maxRepeats > 0 && _currentRepeats >= maxRepeats)
                             return NodeState.Failure;
                         
-                        child.Reset();
+                        child.ResetNode();
                         return NodeState.Running;
                     }
                     return NodeState.Failure;

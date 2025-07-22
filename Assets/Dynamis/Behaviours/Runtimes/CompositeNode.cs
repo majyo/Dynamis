@@ -28,12 +28,12 @@ namespace Dynamis.Behaviours.Runtimes
             children.Clear();
         }
 
-        public override void Reset()
+        public override void ResetNode()
         {
-            base.Reset();
+            base.ResetNode();
             foreach (var child in children)
             {
-                child?.Reset();
+                child?.ResetNode();
             }
         }
 
