@@ -71,6 +71,7 @@ namespace Dynamis.Behaviours.Editor.Views
             // 保存按钮
             var saveButton = CreateToolbarButton("Save", "Save current behaviour tree");
             saveButton.clicked += () => OnSaveClicked?.Invoke();
+            Add(saveButton);
         }
         
         private void CreateEditSection()

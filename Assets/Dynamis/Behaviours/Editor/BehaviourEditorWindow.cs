@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using Dynamis.Behaviours.Editor.Views;
 using Dynamis.Behaviours.Runtimes;
+using UnityEngine.Assertions;
 
 namespace Dynamis.Behaviours.Editor
 {
@@ -14,7 +14,7 @@ namespace Dynamis.Behaviours.Editor
         private TwoColumnLayout _twoColumnLayout;
         private NodeCanvasPanel _nodeCanvasPanel;
         
-        private Dictionary<string, NodeElement> _sampleNodes;
+        // private Dictionary<string, NodeElement> _sampleNodes;
         
         // 当前编辑的行为树资产
         private BehaviourTreeAsset _currentAsset;
@@ -26,6 +26,11 @@ namespace Dynamis.Behaviours.Editor
         {
             Instance = GetWindow<BehaviourEditorWindow>("Behaviour Editor");
             Instance.titleContent = new GUIContent("Behaviour Editor");
+            
+            if (Instance._currentAsset == null)
+            {
+                Instance.ClearAndCreateNewAsset();
+            }
         }
 
         private void CreateGUI()
@@ -53,8 +58,8 @@ namespace Dynamis.Behaviours.Editor
             
             SetupNodeCanvas();
             
-            AddSampleNodes();
-            CreateSampleConnections();
+            // AddSampleNodes();
+            // CreateSampleConnections();
         }
         
         private void SetupNodeCanvas()
@@ -70,82 +75,82 @@ namespace Dynamis.Behaviours.Editor
             rightContent.Add(_nodeCanvasPanel);
         }
         
-        private void AddSampleNodes()
-        {
-            var rootNode = new NodeElement("Root", "Behaviour tree root node", false, true);
-            _nodeCanvasPanel.AddNode(rootNode, new Vector2(200, 50));
-            
-            var selectorNode = new NodeElement("Selector", "Select first successful child");
-            _nodeCanvasPanel.AddNode(selectorNode, new Vector2(150, 180));
-
-            var sequenceNode = new NodeElement("Sequence", "Execute children in order");
-            _nodeCanvasPanel.AddNode(sequenceNode, new Vector2(250, 180));
-
-            var actionNode1 = new NodeElement("Move To Target", "Move character to target position", true, false);
-            _nodeCanvasPanel.AddNode(actionNode1, new Vector2(100, 310));
-
-            var actionNode2 = new NodeElement("Attack Enemy", "Perform attack on enemy target", true, false);
-            _nodeCanvasPanel.AddNode(actionNode2, new Vector2(200, 310));
-
-            var actionNode3 = new NodeElement("Wait", "Wait for specified duration", true, false);
-            _nodeCanvasPanel.AddNode(actionNode3, new Vector2(300, 310));
-
-            _sampleNodes = new Dictionary<string, NodeElement>
-            {
-                ["root"] = rootNode,
-                ["selector"] = selectorNode,
-                ["sequence"] = sequenceNode,
-                ["moveToTarget"] = actionNode1,
-                ["attackEnemy"] = actionNode2,
-                ["wait"] = actionNode3
-            };
-        }
-        
-        private void CreateSampleConnections()
-        {
-            rootVisualElement.schedule.Execute(() =>
-            {
-                var connection1 =
-                    new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
-                    {
-                        ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
-                        LineWidth = 2f
-                    };
-                _nodeCanvasPanel.AddConnection(connection1);
-
-                var connection2 =
-                    new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
-                    {
-                        ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
-                        LineWidth = 2f
-                    };
-                _nodeCanvasPanel.AddConnection(connection2);
-
-                var connection3 = new Connection(_sampleNodes["selector"].OutputPort,
-                    _sampleNodes["moveToTarget"].InputPort)
-                {
-                    ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
-                    LineWidth = 2f
-                };
-                _nodeCanvasPanel.AddConnection(connection3);
-
-                var connection4 = new Connection(_sampleNodes["selector"].OutputPort,
-                    _sampleNodes["attackEnemy"].InputPort)
-                {
-                    ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
-                    LineWidth = 2f
-                };
-                _nodeCanvasPanel.AddConnection(connection4);
-
-                var connection5 =
-                    new Connection(_sampleNodes["sequence"].OutputPort, _sampleNodes["wait"].InputPort)
-                    {
-                        ConnectionColor = new Color(0.8f, 0.3f, 0.3f, 1f),
-                        LineWidth = 2f
-                    };
-                _nodeCanvasPanel.AddConnection(connection5);
-            }).ExecuteLater(100); // 延迟100ms执行
-        }
+        // private void AddSampleNodes()
+        // {
+        //     var rootNode = new NodeElement("Root", "Behaviour tree root node", false, true);
+        //     _nodeCanvasPanel.AddNode(rootNode, new Vector2(200, 50));
+        //     
+        //     var selectorNode = new NodeElement("Selector", "Select first successful child");
+        //     _nodeCanvasPanel.AddNode(selectorNode, new Vector2(150, 180));
+        //
+        //     var sequenceNode = new NodeElement("Sequence", "Execute children in order");
+        //     _nodeCanvasPanel.AddNode(sequenceNode, new Vector2(250, 180));
+        //
+        //     var actionNode1 = new NodeElement("Move To Target", "Move character to target position", true, false);
+        //     _nodeCanvasPanel.AddNode(actionNode1, new Vector2(100, 310));
+        //
+        //     var actionNode2 = new NodeElement("Attack Enemy", "Perform attack on enemy target", true, false);
+        //     _nodeCanvasPanel.AddNode(actionNode2, new Vector2(200, 310));
+        //
+        //     var actionNode3 = new NodeElement("Wait", "Wait for specified duration", true, false);
+        //     _nodeCanvasPanel.AddNode(actionNode3, new Vector2(300, 310));
+        //
+        //     _sampleNodes = new Dictionary<string, NodeElement>
+        //     {
+        //         ["root"] = rootNode,
+        //         ["selector"] = selectorNode,
+        //         ["sequence"] = sequenceNode,
+        //         ["moveToTarget"] = actionNode1,
+        //         ["attackEnemy"] = actionNode2,
+        //         ["wait"] = actionNode3
+        //     };
+        // }
+        //
+        // private void CreateSampleConnections()
+        // {
+        //     rootVisualElement.schedule.Execute(() =>
+        //     {
+        //         var connection1 =
+        //             new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["selector"].InputPort)
+        //             {
+        //                 ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
+        //                 LineWidth = 2f
+        //             };
+        //         _nodeCanvasPanel.AddConnection(connection1);
+        //
+        //         var connection2 =
+        //             new Connection(_sampleNodes["root"].OutputPort, _sampleNodes["sequence"].InputPort)
+        //             {
+        //                 ConnectionColor = new Color(0.8f, 0.8f, 0.8f, 1f),
+        //                 LineWidth = 2f
+        //             };
+        //         _nodeCanvasPanel.AddConnection(connection2);
+        //
+        //         var connection3 = new Connection(_sampleNodes["selector"].OutputPort,
+        //             _sampleNodes["moveToTarget"].InputPort)
+        //         {
+        //             ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
+        //             LineWidth = 2f
+        //         };
+        //         _nodeCanvasPanel.AddConnection(connection3);
+        //
+        //         var connection4 = new Connection(_sampleNodes["selector"].OutputPort,
+        //             _sampleNodes["attackEnemy"].InputPort)
+        //         {
+        //             ConnectionColor = new Color(0.3f, 0.8f, 0.3f, 1f),
+        //             LineWidth = 2f
+        //         };
+        //         _nodeCanvasPanel.AddConnection(connection4);
+        //
+        //         var connection5 =
+        //             new Connection(_sampleNodes["sequence"].OutputPort, _sampleNodes["wait"].InputPort)
+        //             {
+        //                 ConnectionColor = new Color(0.8f, 0.3f, 0.3f, 1f),
+        //                 LineWidth = 2f
+        //             };
+        //         _nodeCanvasPanel.AddConnection(connection5);
+        //     }).ExecuteLater(100); // 延迟100ms执行
+        // }
         
         #region Asset Management
         
@@ -164,18 +169,7 @@ namespace Dynamis.Behaviours.Editor
                 }
             }
             
-            // 清除当前内容
-            ClearCanvas();
-            
-            // 创建新资产
-            _currentAsset = CreateInstance<BehaviourTreeAsset>();
-            _currentAssetPath = null;
-            _hasUnsavedChanges = false;
-            
-            // 加载空的行为树内容
-            LoadBehaviourTreeFromAsset();
-            
-            UpdateWindowTitle();
+            ClearAndCreateNewAsset();
         }
         
         /// <summary>
@@ -193,12 +187,15 @@ namespace Dynamis.Behaviours.Editor
                 }
             }
             
-            string path = EditorUtility.OpenFilePanel("Open Behaviour Tree", "Assets", "asset");
+            var path = EditorUtility.OpenFilePanel("Open Behaviour Tree", "Assets", "asset");
+            
             if (string.IsNullOrEmpty(path))
+            {
                 return;
+            }
                 
             // 转换为相对路径
-            string relativePath = "Assets" + path.Substring(Application.dataPath.Length);
+            var relativePath = "Assets" + path.Substring(Application.dataPath.Length);
             
             // 加载资产
             var asset = AssetDatabase.LoadAssetAtPath<BehaviourTreeAsset>(relativePath);
@@ -216,11 +213,7 @@ namespace Dynamis.Behaviours.Editor
         /// </summary>
         private void OnSaveAsset()
         {
-            if (_currentAsset == null)
-            {
-                OnNewAsset();
-                return;
-            }
+            Assert.IsNotNull(_currentAsset);
             
             if (string.IsNullOrEmpty(_currentAssetPath))
             {
@@ -234,17 +227,32 @@ namespace Dynamis.Behaviours.Editor
             }
         }
         
+        private void ClearAndCreateNewAsset()
+        {
+            ClearCanvas();
+            
+            _currentAsset = CreateInstance<BehaviourTreeAsset>();
+            _currentAssetPath = null;
+            _hasUnsavedChanges = false;
+            
+            LoadBehaviourTreeFromAsset();
+            UpdateWindowTitle();
+        }
+        
         /// <summary>
         /// 另存为新文件
         /// </summary>
         private void SaveAssetAs()
         {
-            string path = EditorUtility.SaveFilePanel("Save Behaviour Tree", "Assets", "NewBehaviourTree", "asset");
+            var path = EditorUtility.SaveFilePanel("Save Behaviour Tree", "Assets", "NewBehaviourTree", "asset");
+            
             if (string.IsNullOrEmpty(path))
+            {
                 return;
+            }
                 
             // 转换为相对路径
-            string relativePath = "Assets" + path.Substring(Application.dataPath.Length);
+            var relativePath = "Assets" + path.Substring(Application.dataPath.Length);
             
             // 保存资产
             SaveBehaviourTreeToAsset();
@@ -264,7 +272,9 @@ namespace Dynamis.Behaviours.Editor
         private void SaveAsset()
         {
             if (_currentAsset == null || string.IsNullOrEmpty(_currentAssetPath))
+            {
                 return;
+            }
                 
             SaveBehaviourTreeToAsset();
             EditorUtility.SetDirty(_currentAsset);
@@ -296,7 +306,6 @@ namespace Dynamis.Behaviours.Editor
         private void ClearCanvas()
         {
             _nodeCanvasPanel?.ClearAll();
-            _sampleNodes?.Clear();
         }
         
         /// <summary>
@@ -305,9 +314,6 @@ namespace Dynamis.Behaviours.Editor
         private void LoadBehaviourTreeFromAsset()
         {
             // TODO: 当BehaviourTreeAsset有具体内容时，在这里实现加载逻辑
-            // 目前暂时加载示例节点作为占位符
-            AddSampleNodes();
-            CreateSampleConnections();
         }
         
         /// <summary>
