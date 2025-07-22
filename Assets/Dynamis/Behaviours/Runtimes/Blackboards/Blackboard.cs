@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Dynamis.Behaviours.Runtimes.Blackboards
 {
@@ -72,10 +73,36 @@ namespace Dynamis.Behaviours.Runtimes.Blackboards
     }
 
     [Serializable]
-    public class Blackboard : IBlackboard
+    public class SerializableBlackboardEntry
     {
-        private Dictionary<string, BlackboardKey> _keyRegistry = new();
-        private Dictionary<BlackboardKey, object> _entries = new();
+        public string keyName;
+        public string typeName;
+        public string serializedValue;
+
+        public SerializableBlackboardEntry() { }
+
+        public SerializableBlackboardEntry(string keyName, string typeName, string serializedValue)
+        {
+            this.keyName = keyName;
+            this.typeName = typeName;
+            this.serializedValue = serializedValue;
+        }
+    }
+
+    [CreateAssetMenu(fileName = "New Blackboard", menuName = "Dynamis/Blackboard")]
+    public class Blackboard : ScriptableObject, IBlackboard, ISerializationCallbackReceiver
+    {
+        [SerializeField] private List<SerializableBlackboardEntry> _serializableEntries = new();
+        [SerializeField] private List<string> _serializableKeys = new();
+
+        private Dictionary<string, BlackboardKey> _keyRegistry;
+        private Dictionary<BlackboardKey, object> _entries;
+
+        private void OnEnable()
+        {
+            _keyRegistry ??= new Dictionary<string, BlackboardKey>();
+            _entries ??= new Dictionary<BlackboardKey, object>();
+        }
 
         public void Debug()
         {
@@ -167,43 +194,222 @@ namespace Dynamis.Behaviours.Runtimes.Blackboards
         {
             _entries.Remove(key);
         }
-        
+
         /// <summary>
         /// Copies all entries from the current blackboard to a new blackboard instance. Note: Keys registered in _keyRegistry but not used will not be copied.
         /// </summary>
         /// <returns>The cloned Blackboard instance</returns>
         public Blackboard Clone()
         {
-            var clonedBlackboard = new Blackboard();
-            
+            var clonedBlackboard = CreateInstance<Blackboard>();
+
             foreach (var (key, entry) in _entries)
             {
                 var entryType = entry.GetType();
-                
+
                 if (!entryType.IsGenericType || entryType.GetGenericTypeDefinition() != typeof(BlackboardEntry<>))
                 {
                     continue;
                 }
-                
+
                 var valueProperty = entryType.GetProperty("Value");
-                
+
                 if (valueProperty == null)
                 {
                     continue;
                 }
-                
+
                 var value = valueProperty.GetValue(entry);
                 var valueType = valueProperty.PropertyType;
-                
+
                 var blackboardEntryType = typeof(BlackboardEntry<>).MakeGenericType(valueType);
                 var clonedEntry = Activator.CreateInstance(blackboardEntryType, key, value);
-                
+
                 clonedBlackboard._entries[key] = clonedEntry;
                 // Only used keys will be registered in the cloned blackboard
                 clonedBlackboard._keyRegistry[key.ToString()] = key;
             }
-            
+
             return clonedBlackboard;
         }
+
+        public void OnBeforeSerialize()
+        {
+            _serializableEntries.Clear();
+            _serializableKeys.Clear();
+
+            if (_keyRegistry != null)
+            {
+                foreach (var kvp in _keyRegistry)
+                {
+                    _serializableKeys.Add(kvp.Key);
+                }
+            }
+
+            if (_entries != null)
+            {
+                foreach (var kvp in _entries)
+                {
+                    var key = kvp.Key;
+                    var entry = kvp.Value;
+                    var keyName = key.ToString();
+
+                    var entryType = entry.GetType();
+                    if (!entryType.IsGenericType || entryType.GetGenericTypeDefinition() != typeof(BlackboardEntry<>))
+                        continue;
+
+                    var valueProperty = entryType.GetProperty("Value");
+                    if (valueProperty == null)
+                        continue;
+
+                    var value = valueProperty.GetValue(entry);
+                    var valueType = valueProperty.PropertyType;
+
+                    try
+                    {
+                        string serializedValue;
+                        
+                        // 处理基本类型和Unity可序列化类型
+                        if (valueType.IsPrimitive || valueType == typeof(string) || valueType == typeof(Vector2) ||
+                            valueType == typeof(Vector3) || valueType == typeof(Vector4) || valueType == typeof(Color) ||
+                            valueType == typeof(Quaternion) || valueType.IsEnum)
+                        {
+                            // 创建一个包装器类型来序列化值
+                            var wrapperType = typeof(SerializableValueWrapper<>).MakeGenericType(valueType);
+                            var wrapper = Activator.CreateInstance(wrapperType);
+                            wrapperType.GetField("value").SetValue(wrapper, value);
+                            serializedValue = JsonUtility.ToJson(wrapper);
+                        }
+                        else if (typeof(UnityEngine.Object).IsAssignableFrom(valueType))
+                        {
+                            // Unity对象存储引用
+                            var unityObj = value as UnityEngine.Object;
+                            var wrapper = new UnityObjectWrapper 
+                            { 
+                                instanceID = unityObj != null ? unityObj.GetInstanceID() : 0,
+                                isNull = unityObj == null
+                            };
+                            serializedValue = JsonUtility.ToJson(wrapper);
+                        }
+                        else if (valueType.IsSerializable || valueType.GetCustomAttributes(typeof(SerializableAttribute), false).Length > 0)
+                        {
+                            // 自定义可序列化类型
+                            serializedValue = JsonUtility.ToJson(value);
+                        }
+                        else
+                        {
+                            // 不支持的类型，跳过
+                            UnityEngine.Debug.LogWarning($"Type '{valueType.Name}' is not serializable and will be skipped for key '{keyName}'");
+                            continue;
+                        }
+
+                        var serializableEntry = new SerializableBlackboardEntry(
+                            keyName,
+                            valueType.AssemblyQualifiedName,
+                            serializedValue
+                        );
+
+                        _serializableEntries.Add(serializableEntry);
+                    }
+                    catch (Exception e)
+                    {
+                        UnityEngine.Debug.LogWarning($"Failed to serialize blackboard entry for key '{keyName}': {e.Message}");
+                    }
+                }
+            }
+        }
+
+        public void OnAfterDeserialize()
+        {
+            _keyRegistry = new Dictionary<string, BlackboardKey>();
+            _entries = new Dictionary<BlackboardKey, object>();
+
+            // 恢复键注册表
+            foreach (var keyName in _serializableKeys)
+            {
+                if (!string.IsNullOrEmpty(keyName))
+                {
+                    _keyRegistry[keyName] = new BlackboardKey(keyName);
+                }
+            }
+
+            // 恢复条目
+            foreach (var serializableEntry in _serializableEntries)
+            {
+                if (string.IsNullOrEmpty(serializableEntry.keyName) || string.IsNullOrEmpty(serializableEntry.typeName))
+                    continue;
+
+                try
+                {
+                    var valueType = Type.GetType(serializableEntry.typeName);
+                    if (valueType == null)
+                    {
+                        UnityEngine.Debug.LogWarning($"Could not find type '{serializableEntry.typeName}' for blackboard key '{serializableEntry.keyName}'");
+                        continue;
+                    }
+
+                    var key = GetOrRegisterKey(serializableEntry.keyName);
+                    object value;
+
+                    if (valueType.IsPrimitive || valueType == typeof(string) || valueType == typeof(Vector2) ||
+                        valueType == typeof(Vector3) || valueType == typeof(Vector4) || valueType == typeof(Color) ||
+                        valueType == typeof(Quaternion) || valueType.IsEnum)
+                    {
+                        // 反序列化基本类型
+                        var wrapperType = typeof(SerializableValueWrapper<>).MakeGenericType(valueType);
+                        var wrapper = JsonUtility.FromJson(serializableEntry.serializedValue, wrapperType);
+                        value = wrapperType.GetField("value").GetValue(wrapper);
+                    }
+                    else if (typeof(UnityEngine.Object).IsAssignableFrom(valueType))
+                    {
+                        // Unity对象反序列化
+                        var wrapper = JsonUtility.FromJson<UnityObjectWrapper>(serializableEntry.serializedValue);
+                        
+                        if (wrapper.isNull)
+                        {
+                            value = null;
+                        }
+                        else
+                        {
+#if UNITY_EDITOR
+                            // 在编辑器中，我们可以通过InstanceID恢复对象引用
+                            value = UnityEditor.EditorUtility.InstanceIDToObject(wrapper.instanceID);
+#else
+                            // 在运行时，我们无法通过InstanceID恢复对象，所以设置为null
+                            // 这是Unity序列化的限制，需要在编辑器中处理对象引用
+                            value = null;
+#endif
+                        }
+                    }
+                    else
+                    {
+                        // 自定义可序列化类型
+                        value = JsonUtility.FromJson(serializableEntry.serializedValue, valueType);
+                    }
+
+                    var blackboardEntryType = typeof(BlackboardEntry<>).MakeGenericType(valueType);
+                    var blackboardEntry = Activator.CreateInstance(blackboardEntryType, key, value);
+                    _entries[key] = blackboardEntry;
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.LogWarning($"Failed to deserialize blackboard entry for key '{serializableEntry.keyName}': {e.Message}");
+                }
+            }
+        }
+    }
+
+    [Serializable]
+    internal class SerializableValueWrapper<T>
+    {
+        public T value;
+    }
+
+    [Serializable]
+    internal class UnityObjectWrapper
+    {
+        public int instanceID;
+        public bool isNull;
     }
 }
+
