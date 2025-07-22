@@ -4,8 +4,8 @@ namespace Dynamis.Behaviours.Runtimes
 {
     public enum ParallelPolicy
     {
-        RequireOne,  // 需要一个子节点成功
-        RequireAll   // 需要所有子节点成功
+        RequireOne,  // Succeed when one child succeeds
+        RequireAll   // Succeed when all children succeed
     }
 
     [CreateAssetMenu(fileName = "Parallel Node", menuName = "Dynamis/Behaviour Nodes/Composite/Parallel")]
@@ -37,13 +37,13 @@ namespace Dynamis.Behaviours.Runtimes
                 }
             }
 
-            // 检查失败条件
+            // Check failure policy
             if (failurePolicy == ParallelPolicy.RequireOne && failureCount > 0)
                 return NodeState.Failure;
             if (failurePolicy == ParallelPolicy.RequireAll && failureCount == children.Count)
                 return NodeState.Failure;
 
-            // 检查成功条件
+            // Check success policy
             if (successPolicy == ParallelPolicy.RequireOne && successCount > 0)
                 return NodeState.Success;
             if (successPolicy == ParallelPolicy.RequireAll && successCount == children.Count)

@@ -8,15 +8,15 @@ namespace Dynamis.Behaviours.Editor.Views
         private Label _nameLabel;
         private Label _descriptionLabel;
         
-        // 端口相关字段
+        // Port related fields
         private Port _inputPort;
         private Port _outputPort;
         
-        // 状态相关字段
+        // State related fields
         private bool _isHovered;
         private bool _isSelected;
         
-        // 连线更新回调
+        // Connection update callback
         public System.Action onPositionChanged;
         
         public string NodeName { get; set; }
@@ -24,7 +24,7 @@ namespace Dynamis.Behaviours.Editor.Views
         public Port InputPort => _inputPort;
         public Port OutputPort => _outputPort;
 
-        // 悬浮状态属性
+        // Hover state property
         public bool IsHovered 
         { 
             get => _isHovered; 
@@ -38,7 +38,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        // 选中状态属性
+        // Selected state property
         public bool IsSelected 
         { 
             get => _isSelected; 
@@ -52,7 +52,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        // 基于transform的节点位置计算，用于替代基于style的计算，尚不确定是否会引入布局问题
+        // Node position calculation based on transform, used to replace style-based calculation, not sure if it will cause layout issues
         public Vector2 CanvasPosition
         {
             get => new(transform.position.x, transform.position.y);
@@ -77,15 +77,15 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             CanvasPosition += delta;
                 
-            // 通知端口更新位置
+            // Notify ports to update position
             _inputPort?.UpdateWorldPosition();
             _outputPort?.UpdateWorldPosition();
                 
-            // 通知连线更新
+            // Notify connections to update
             onPositionChanged?.Invoke();
         }
         
-        // 检查点是否在节点内
+        // Check if a point is inside the node
         public new bool ContainsPoint(Vector2 point)
         {
             var rect = new Rect(CanvasPosition.x, CanvasPosition.y, CanvasSize.x, CanvasSize.y);
@@ -105,18 +105,18 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void SetupNode()
         {
-            // 设置节点基本样式
+            // Set basic node style
             name = "behaviour-node";
             
             style.position = Position.Absolute;
             style.width = 180;
             style.minHeight = 80;
-            style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f); // 深灰色背景
+            style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f); // Dark gray background
             style.borderTopWidth = 2;
             style.borderBottomWidth = 2;
             style.borderLeftWidth = 2;
             style.borderRightWidth = 2;
-            style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f); // 边框颜色
+            style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f); // Border color
             style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 1f);
             style.borderLeftColor = new Color(0.4f, 0.4f, 0.4f, 1f);
             style.borderRightColor = new Color(0.4f, 0.4f, 0.4f, 1f);
@@ -125,12 +125,12 @@ namespace Dynamis.Behaviours.Editor.Views
             style.borderBottomLeftRadius = 8;
             style.borderBottomRightRadius = 8;
             
-            // 创建头部区域（类似UE4的蓝色头部）
+            // Create header area (similar to UE4's blue header)
             var header = new VisualElement
             {
                 name = "node-header",
                 style = {
-                    backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f), // 蓝色头部
+                    backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f), // Blue header
                     height = 30,
                     borderTopLeftRadius = 6,
                     borderTopRightRadius = 6,
@@ -139,7 +139,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 }
             };
             
-            // 节点名称标签
+            // Node name label
             _nameLabel = new Label(NodeName)
             {
                 name = "node-name-label",
@@ -153,7 +153,7 @@ namespace Dynamis.Behaviours.Editor.Views
             header.Add(_nameLabel);
             Add(header);
             
-            // 创建内容区域
+            // Create content area
             var content = new VisualElement
             {
                 name = "node-content",
@@ -166,7 +166,7 @@ namespace Dynamis.Behaviours.Editor.Views
                 }
             };
             
-            // 描述标签
+            // Description label
             _descriptionLabel = new Label(Description)
             {
                 name = "node-description-label",
@@ -198,10 +198,10 @@ namespace Dynamis.Behaviours.Editor.Views
 
         private void UpdateNodeStyles()
         {
-            // 根据四种状态组合设置不同的边框样式，保持背景颜色不变用于区分节点种类
+            // Set different border styles according to the four state combinations, keep the background color unchanged to distinguish node types
             if (_isSelected && _isHovered)
             {
-                // 选中且悬浮：金黄色粗边框 + 发光效果
+                // Selected and hovered: golden thick border + glow effect
                 style.borderTopColor = new Color(1f, 0.8f, 0.3f, 1f);
                 style.borderBottomColor = new Color(1f, 0.8f, 0.3f, 1f);
                 style.borderLeftColor = new Color(1f, 0.8f, 0.3f, 1f);
@@ -213,7 +213,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
             else if (_isSelected)
             {
-                // 仅选中：橙色粗边框
+                // Only selected: orange thick border
                 style.borderTopColor = new Color(1f, 0.6f, 0.2f, 1f);
                 style.borderBottomColor = new Color(1f, 0.6f, 0.2f, 1f);
                 style.borderLeftColor = new Color(1f, 0.6f, 0.2f, 1f);
@@ -225,7 +225,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
             else if (_isHovered)
             {
-                // 仅悬浮：白色中等边框
+                // Only hovered: white medium border
                 style.borderTopColor = new Color(0.9f, 0.9f, 0.9f, 1f);
                 style.borderBottomColor = new Color(0.9f, 0.9f, 0.9f, 1f);
                 style.borderLeftColor = new Color(0.9f, 0.9f, 0.9f, 1f);
@@ -237,7 +237,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
             else
             {
-                // 默认状态：原始边框样式
+                // Default state: original border style
                 style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f);
                 style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 1f);
                 style.borderLeftColor = new Color(0.4f, 0.4f, 0.4f, 1f);

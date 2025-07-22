@@ -89,7 +89,7 @@ namespace Dynamis.Behaviours.Runtimes
                     var currentNode = queue.Dequeue();
                     action(currentNode);
 
-                    // 获取子节点并加入队列
+                    // Get child nodes and add them to the queue
                     GetChildren(currentNode, children);
                     
                     foreach (var child in children)
@@ -122,7 +122,7 @@ namespace Dynamis.Behaviours.Runtimes
                     var currentNode = stack.Pop();
                     action(currentNode);
 
-                    // 获取子节点并以逆序加入栈（这样遍历时会按正序访问）
+                    // Get child nodes and add them to the stack in reverse order (so they are visited in the correct order during traversal)
                     GetChildren(currentNode, children);
                     
                     for (int i = children.Count - 1; i >= 0; i--)

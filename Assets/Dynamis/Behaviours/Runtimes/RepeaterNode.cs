@@ -5,7 +5,7 @@ namespace Dynamis.Behaviours.Runtimes
     [CreateAssetMenu(fileName = "Repeater Node", menuName = "Dynamis/Behaviour Nodes/Decorator/Repeater")]
     public class RepeaterNode : DecoratorNode
     {
-        [SerializeField] private int maxRepeats = -1; // -1 表示无限重复
+        [SerializeField] private int maxRepeats = -1; // -1 means infinite repeats
         [SerializeField] private bool restartOnSuccess = true;
         [SerializeField] private bool restartOnFailure;
         

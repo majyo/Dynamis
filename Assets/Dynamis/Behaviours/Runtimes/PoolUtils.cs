@@ -4,11 +4,11 @@ using UnityEngine.Pool;
 namespace Dynamis.Behaviours.Runtimes
 {
     /// <summary>
-    /// 提供Queue和Stack的对象池化工具类
+    /// Provides object pooling utilities for Queue and Stack of Node
     /// </summary>
     public static class PoolUtils
     {
-        // Queue&lt;Node&gt;的对象池
+        // Object pool for Queue&lt;Node&gt;
         private static readonly ObjectPool<Queue<Node>> QueuePool = new(
             createFunc: () => new Queue<Node>(),
             actionOnGet: queue => queue.Clear(),
@@ -19,7 +19,7 @@ namespace Dynamis.Behaviours.Runtimes
             maxSize: 100
         );
 
-        // Stack&lt;Node&gt;的对象池
+        // Object pool for Stack&lt;Node&gt;
         private static readonly ObjectPool<Stack<Node>> StackPool = new(
             createFunc: () => new Stack<Node>(),
             actionOnGet: stack => stack.Clear(),
@@ -30,7 +30,7 @@ namespace Dynamis.Behaviours.Runtimes
             maxSize: 100
         );
 
-        // List&lt;Node&gt;的对象池
+        // Object pool for List&lt;Node&gt;
         private static readonly ObjectPool<List<Node>> ListPool = new(
             createFunc: () => new List<Node>(),
             actionOnGet: list => list.Clear(),
@@ -42,18 +42,18 @@ namespace Dynamis.Behaviours.Runtimes
         );
 
         /// <summary>
-        /// 从池中获取一个Queue&lt;Node&gt;
+        /// Gets a Queue&lt;Node&gt; from the pool
         /// </summary>
-        /// <returns>清空的Queue&lt;Node&gt;实例</returns>
+        /// <returns>A cleared Queue&lt;Node&gt; instance</returns>
         public static Queue<Node> GetQueue()
         {
             return QueuePool.Get();
         }
 
         /// <summary>
-        /// 将Queue&lt;Node&gt;归还到池中
+        /// Releases a Queue&lt;Node&gt; back to the pool
         /// </summary>
-        /// <param name="queue">要归还的队列</param>
+        /// <param name="queue">The queue to release</param>
         public static void ReleaseQueue(Queue<Node> queue)
         {
             if (queue != null)
@@ -63,18 +63,18 @@ namespace Dynamis.Behaviours.Runtimes
         }
 
         /// <summary>
-        /// 从池中获取一个Stack&lt;Node&gt;
+        /// Gets a Stack&lt;Node&gt; from the pool
         /// </summary>
-        /// <returns>清空的Stack&lt;Node&gt;实例</returns>
+        /// <returns>A cleared Stack&lt;Node&gt; instance</returns>
         public static Stack<Node> GetStack()
         {
             return StackPool.Get();
         }
 
         /// <summary>
-        /// 将Stack&lt;Node&gt;归还到池中
+        /// Releases a Stack&lt;Node&gt; back to the pool
         /// </summary>
-        /// <param name="stack">要归还的栈</param>
+        /// <param name="stack">The stack to release</param>
         public static void ReleaseStack(Stack<Node> stack)
         {
             if (stack != null)
@@ -84,18 +84,18 @@ namespace Dynamis.Behaviours.Runtimes
         }
 
         /// <summary>
-        /// 从池中获取一个List&lt;Node&gt;
+        /// Gets a List&lt;Node&gt; from the pool
         /// </summary>
-        /// <returns>清空的List&lt;Node&gt;实例</returns>
+        /// <returns>A cleared List&lt;Node&gt; instance</returns>
         public static List<Node> GetList()
         {
             return ListPool.Get();
         }
 
         /// <summary>
-        /// 将List&lt;Node&gt;归还到池中
+        /// Releases a List&lt;Node&gt; back to the pool
         /// </summary>
-        /// <param name="list">要归还的列表</param>
+        /// <param name="list">The list to release</param>
         public static void ReleaseList(List<Node> list)
         {
             if (list != null)
