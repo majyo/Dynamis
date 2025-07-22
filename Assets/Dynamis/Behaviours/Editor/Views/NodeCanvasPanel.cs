@@ -11,8 +11,8 @@ namespace Dynamis.Behaviours.Editor.Views
         private Vector2 _canvasOffset = Vector2.zero;
         private VisualElement _contentContainer;
 
-        private BehaviourNode _mouseHoveredNode;
-        private readonly HashSet<BehaviourNode> _selectedNodes = new();
+        private NodeElement _mouseHoveredNode;
+        private readonly HashSet<NodeElement> _selectedNodes = new();
 
         // 连线系统相关字段
         private ConnectionRenderer _connectionRenderer;
@@ -29,7 +29,7 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private NodeCanvasEventHandler _eventHandler;
 
-        public BehaviourNode MouseHoveredNode
+        public NodeElement MouseHoveredNode
         {
             get => _mouseHoveredNode;
             set
@@ -53,7 +53,7 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
         
-        public IReadOnlyCollection<BehaviourNode> SelectedNodes => _selectedNodes;
+        public IReadOnlyCollection<NodeElement> SelectedNodes => _selectedNodes;
 
         public NodeCanvasPanel()
         {
@@ -61,7 +61,7 @@ namespace Dynamis.Behaviours.Editor.Views
             SetupEventHandling();
         }
 
-        public bool AddToSelection(BehaviourNode node)
+        public bool AddToSelection(NodeElement node)
         {
             var succeed = _selectedNodes.Add(node);
             
@@ -73,7 +73,7 @@ namespace Dynamis.Behaviours.Editor.Views
             return succeed;
         }
 
-        public bool RemoveFromSelection(BehaviourNode node)
+        public bool RemoveFromSelection(NodeElement node)
         {
             var succeed = _selectedNodes.Remove(node);
             
@@ -102,7 +102,7 @@ namespace Dynamis.Behaviours.Editor.Views
             RefreshConnections();
         }
 
-        public BehaviourNode GetNodeAtPosition(Vector2 mousePosition)
+        public NodeElement GetNodeAtPosition(Vector2 mousePosition)
         {
             // 转换鼠标位置到内容容器的本地坐标
             var localPosition = mousePosition - _canvasOffset;
@@ -112,7 +112,7 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 var child = _contentContainer[i];
 
-                if (child is BehaviourNode node && node.ContainsPoint(localPosition))
+                if (child is NodeElement node && node.ContainsPoint(localPosition))
                 {
                     return node;
                 }
@@ -121,7 +121,7 @@ namespace Dynamis.Behaviours.Editor.Views
             return null;
         }
 
-        public void RemoveNode(BehaviourNode node)
+        public void RemoveNode(NodeElement node)
         {
             RemoveNodeConnections(node);
             _contentContainer.Remove(node);
@@ -172,7 +172,7 @@ namespace Dynamis.Behaviours.Editor.Views
             _eventHandler.RegisterEvents();
         }
 
-        private void RemoveNodeConnections(BehaviourNode node)
+        private void RemoveNodeConnections(NodeElement node)
         {
             var connectionsToRemove = _connections
                 .Where(connection =>
@@ -208,7 +208,7 @@ namespace Dynamis.Behaviours.Editor.Views
             {
                 var child = _contentContainer[i];
 
-                if (child is BehaviourNode node)
+                if (child is NodeElement node)
                 {
                     // 检查输入端口
                     if (node.InputPort != null && IsPointInPort(node.InputPort, localPosition))
@@ -234,7 +234,7 @@ namespace Dynamis.Behaviours.Editor.Views
             return portRect.Contains(position);
         }
 
-        public void AddNode(BehaviourNode node, Vector2 position)
+        public void AddNode(NodeElement node, Vector2 position)
         {
             node.CanvasPosition = position;
             node.onPositionChanged = RefreshConnections;
@@ -376,14 +376,14 @@ namespace Dynamis.Behaviours.Editor.Views
             var canvasPosition = _lastRightClickPosition - _canvasOffset;
 
             // 创建新节点
-            var newNode = new BehaviourNode(nodeName, description, hasInput, hasOutput);
+            var newNode = new NodeElement(nodeName, description, hasInput, hasOutput);
             AddNode(newNode, canvasPosition);
 
             // 隐藏菜单
             HideContextMenu();
         }
 
-        private void BindNodeEvents(BehaviourNode node)
+        private void BindNodeEvents(NodeElement node)
         {
             if (node.InputPort != null)
             {
@@ -408,9 +408,9 @@ namespace Dynamis.Behaviours.Editor.Views
         }
 
         // 获取所有节点
-        public IEnumerable<BehaviourNode> GetAllNodes()
+        public IEnumerable<NodeElement> GetAllNodes()
         {
-            return _contentContainer.Children().OfType<BehaviourNode>();
+            return _contentContainer.Children().OfType<NodeElement>();
         }
 
         // 检查端口是否已有连线

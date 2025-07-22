@@ -13,7 +13,7 @@ namespace Dynamis.Behaviours.Editor
         private TwoColumnLayout _twoColumnLayout;
         private NodeCanvasPanel _nodeCanvasPanel;
         
-        private Dictionary<string, BehaviourNode> _sampleNodes;
+        private Dictionary<string, NodeElement> _sampleNodes;
         
         [MenuItem("Dynamis/Behaviour Editor")]
         public static void ShowWindow()
@@ -60,25 +60,25 @@ namespace Dynamis.Behaviours.Editor
         
         private void AddSampleNodes()
         {
-            var rootNode = new BehaviourNode("Root", "Behaviour tree root node", false, true);
+            var rootNode = new NodeElement("Root", "Behaviour tree root node", false, true);
             _nodeCanvasPanel.AddNode(rootNode, new Vector2(200, 50));
             
-            var selectorNode = new BehaviourNode("Selector", "Select first successful child");
+            var selectorNode = new NodeElement("Selector", "Select first successful child");
             _nodeCanvasPanel.AddNode(selectorNode, new Vector2(150, 180));
 
-            var sequenceNode = new BehaviourNode("Sequence", "Execute children in order");
+            var sequenceNode = new NodeElement("Sequence", "Execute children in order");
             _nodeCanvasPanel.AddNode(sequenceNode, new Vector2(250, 180));
 
-            var actionNode1 = new BehaviourNode("Move To Target", "Move character to target position", true, false);
+            var actionNode1 = new NodeElement("Move To Target", "Move character to target position", true, false);
             _nodeCanvasPanel.AddNode(actionNode1, new Vector2(100, 310));
 
-            var actionNode2 = new BehaviourNode("Attack Enemy", "Perform attack on enemy target", true, false);
+            var actionNode2 = new NodeElement("Attack Enemy", "Perform attack on enemy target", true, false);
             _nodeCanvasPanel.AddNode(actionNode2, new Vector2(200, 310));
 
-            var actionNode3 = new BehaviourNode("Wait", "Wait for specified duration", true, false);
+            var actionNode3 = new NodeElement("Wait", "Wait for specified duration", true, false);
             _nodeCanvasPanel.AddNode(actionNode3, new Vector2(300, 310));
 
-            _sampleNodes = new Dictionary<string, BehaviourNode>
+            _sampleNodes = new Dictionary<string, NodeElement>
             {
                 ["root"] = rootNode,
                 ["selector"] = selectorNode,

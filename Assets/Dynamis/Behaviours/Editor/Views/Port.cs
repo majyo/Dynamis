@@ -16,7 +16,7 @@ namespace Dynamis.Behaviours.Editor.Views
         private Vector2 _position;
         
         public PortType Type { get; private set; }
-        public BehaviourNode ParentNode { get; private set; }
+        public NodeElement ParentNode { get; private set; }
 
         public Vector2 Position
         {
@@ -30,7 +30,7 @@ namespace Dynamis.Behaviours.Editor.Views
         // 添加事件回调
         public Action<Port, bool> onPortPressed;
         
-        public Port(PortType type, BehaviourNode parentNode)
+        public Port(PortType type, NodeElement parentNode)
         {
             Type = type;
             ParentNode = parentNode;

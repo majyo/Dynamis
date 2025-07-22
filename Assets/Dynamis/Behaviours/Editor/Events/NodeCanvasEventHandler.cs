@@ -19,7 +19,7 @@ namespace Dynamis.Behaviours.Editor.Events
         private bool _isDraggingNode;
         private bool _isDraggingCanvas;
         private bool _isDraggingConnection; // 新增：连线拖拽状态
-        private BehaviourNode _draggedNode;
+        private NodeElement _draggedNode;
         private Vector2 _dragStartPosition;
         private Vector2 _lastMousePosition;
         
@@ -125,7 +125,7 @@ namespace Dynamis.Behaviours.Editor.Events
 
         #region 左键操作处理
 
-        private void HandleLeftMouseDown(BehaviourNode nodeAtPosition, Port portAtPosition, bool isAltPressed)
+        private void HandleLeftMouseDown(NodeElement nodeAtPosition, Port portAtPosition, bool isAltPressed)
         {
             _canvas.HideContextMenu();
 
@@ -175,7 +175,7 @@ namespace Dynamis.Behaviours.Editor.Events
             // 输入端口的左键点击暂时不处理，可以后续扩展
         }
 
-        private void HandleNodeSelection(BehaviourNode node, bool isCtrlPressed)
+        private void HandleNodeSelection(NodeElement node, bool isCtrlPressed)
         {
             if (isCtrlPressed)
             {
@@ -187,7 +187,7 @@ namespace Dynamis.Behaviours.Editor.Events
             }
         }
 
-        private void ToggleNodeSelection(BehaviourNode node)
+        private void ToggleNodeSelection(NodeElement node)
         {
             if (_canvas.SelectedNodes.Contains(node))
             {
@@ -199,7 +199,7 @@ namespace Dynamis.Behaviours.Editor.Events
             }
         }
 
-        private void SelectSingleNode(BehaviourNode node)
+        private void SelectSingleNode(NodeElement node)
         {
             if (!_canvas.SelectedNodes.Contains(node))
             {
@@ -220,7 +220,7 @@ namespace Dynamis.Behaviours.Editor.Events
 
         #region 右键操作处理
 
-        private void HandleRightMouseDown(Vector2 mousePosition, BehaviourNode _)
+        private void HandleRightMouseDown(Vector2 mousePosition, NodeElement _)
         {
             _canvas.SetLastRightClickPosition(mousePosition);
             _rightMousePressed = true;
@@ -472,7 +472,7 @@ namespace Dynamis.Behaviours.Editor.Events
             return (evt.pressedButtons & 2) == 2; // 检查右键位
         }
 
-        private void StartNodeDrag(BehaviourNode node)
+        private void StartNodeDrag(NodeElement node)
         {
             _isDraggingNode = true;
             _draggedNode = node;

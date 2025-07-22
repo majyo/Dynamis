@@ -3,20 +3,17 @@ using UnityEngine.UIElements;
 
 namespace Dynamis.Behaviours.Editor.Views
 {
-    public class BehaviourNode : VisualElement
+    public class NodeElement : VisualElement
     {
         private Label _nameLabel;
         private Label _descriptionLabel;
         
-        // Port related fields
         private Port _inputPort;
         private Port _outputPort;
         
-        // State related fields
         private bool _isHovered;
         private bool _isSelected;
         
-        // Connection update callback
         public System.Action onPositionChanged;
         
         public string NodeName { get; set; }
@@ -24,7 +21,6 @@ namespace Dynamis.Behaviours.Editor.Views
         public Port InputPort => _inputPort;
         public Port OutputPort => _outputPort;
 
-        // Hover state property
         public bool IsHovered 
         { 
             get => _isHovered; 
@@ -38,7 +34,6 @@ namespace Dynamis.Behaviours.Editor.Views
             }
         }
 
-        // Selected state property
         public bool IsSelected 
         { 
             get => _isSelected; 
@@ -65,7 +60,7 @@ namespace Dynamis.Behaviours.Editor.Views
 
         public Vector2 CanvasSize => new(resolvedStyle.width, resolvedStyle.height);
 
-        public BehaviourNode(string nodeName = "Node", string description = "Node Description", bool hasInput = true, bool hasOutput = true)
+        public NodeElement(string nodeName = "Node", string description = "Node Description", bool hasInput = true, bool hasOutput = true)
         {
             NodeName = nodeName;
             Description = description;
@@ -77,15 +72,12 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             CanvasPosition += delta;
                 
-            // Notify ports to update position
             _inputPort?.UpdateWorldPosition();
             _outputPort?.UpdateWorldPosition();
                 
-            // Notify connections to update
             onPositionChanged?.Invoke();
         }
         
-        // Check if a point is inside the node
         public new bool ContainsPoint(Vector2 point)
         {
             var rect = new Rect(CanvasPosition.x, CanvasPosition.y, CanvasSize.x, CanvasSize.y);
@@ -105,18 +97,17 @@ namespace Dynamis.Behaviours.Editor.Views
         
         private void SetupNode()
         {
-            // Set basic node style
             name = "behaviour-node";
             
             style.position = Position.Absolute;
             style.width = 180;
             style.minHeight = 80;
-            style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f); // Dark gray background
+            style.backgroundColor = new Color(0.25f, 0.25f, 0.25f, 1f);
             style.borderTopWidth = 2;
             style.borderBottomWidth = 2;
             style.borderLeftWidth = 2;
             style.borderRightWidth = 2;
-            style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f); // Border color
+            style.borderTopColor = new Color(0.4f, 0.4f, 0.4f, 1f);
             style.borderBottomColor = new Color(0.4f, 0.4f, 0.4f, 1f);
             style.borderLeftColor = new Color(0.4f, 0.4f, 0.4f, 1f);
             style.borderRightColor = new Color(0.4f, 0.4f, 0.4f, 1f);
@@ -125,12 +116,11 @@ namespace Dynamis.Behaviours.Editor.Views
             style.borderBottomLeftRadius = 8;
             style.borderBottomRightRadius = 8;
             
-            // Create header area (similar to UE4's blue header)
             var header = new VisualElement
             {
                 name = "node-header",
                 style = {
-                    backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f), // Blue header
+                    backgroundColor = new Color(0.1f, 0.3f, 0.6f, 1f),
                     height = 30,
                     borderTopLeftRadius = 6,
                     borderTopRightRadius = 6,
@@ -139,7 +129,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 }
             };
             
-            // Node name label
             _nameLabel = new Label(NodeName)
             {
                 name = "node-name-label",
@@ -153,7 +142,6 @@ namespace Dynamis.Behaviours.Editor.Views
             header.Add(_nameLabel);
             Add(header);
             
-            // Create content area
             var content = new VisualElement
             {
                 name = "node-content",
@@ -166,7 +154,6 @@ namespace Dynamis.Behaviours.Editor.Views
                 }
             };
             
-            // Description label
             _descriptionLabel = new Label(Description)
             {
                 name = "node-description-label",
