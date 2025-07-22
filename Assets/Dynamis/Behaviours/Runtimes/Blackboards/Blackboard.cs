@@ -169,9 +169,9 @@ namespace Dynamis.Behaviours.Runtimes.Blackboards
         }
         
         /// <summary>
-        /// 拷贝当前黑板的所有条目到一个新的黑板实例中。注意：_keyRegistry中已注册但未使用的键不会被复制。
+        /// Copies all entries from the current blackboard to a new blackboard instance. Note: Keys registered in _keyRegistry but not used will not be copied.
         /// </summary>
-        /// <returns>拷贝得到的Blackboard</returns>
+        /// <returns>The cloned Blackboard instance</returns>
         public Blackboard Clone()
         {
             var clonedBlackboard = new Blackboard();
