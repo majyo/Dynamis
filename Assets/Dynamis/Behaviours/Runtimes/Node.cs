@@ -11,7 +11,7 @@ namespace Dynamis.Behaviours.Runtimes
     }
 
     [System.Serializable]
-    public abstract class Node : ScriptableObject, IGraphNode
+    public abstract class Node : ScriptableObject
     {
         [SerializeField] protected string guid;
         [SerializeField] protected Vector2 position;
