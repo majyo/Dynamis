@@ -57,8 +57,6 @@ namespace Dynamis.Behaviours.Editor.Events
             // 初始化拖拽起始位置
             _dragStartPosition = mousePosition;
             _lastMousePosition = mousePosition;
-            
-            Debug.Log($"OnMouseDown at {mousePosition}, Port: {portAtPosition?.name}, Node: {nodeAtPosition?.name}");
 
             switch (evt.button)
             {

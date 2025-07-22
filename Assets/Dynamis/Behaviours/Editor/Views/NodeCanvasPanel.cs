@@ -432,12 +432,14 @@ namespace Dynamis.Behaviours.Editor.Views
         // 清理拖拽连线
         public void ClearDraggingConnection()
         {
-            if (_draggingConnection != null)
+            if (_draggingConnection == null)
             {
-                RemoveConnection(_draggingConnection);
-                _draggingConnection = null;
-                _draggingFromPort = null;
+                return;
             }
+            
+            RemoveConnection(_draggingConnection);
+            _draggingConnection = null;
+            _draggingFromPort = null;
         }
 
         // 设置端口的吸附高亮状态

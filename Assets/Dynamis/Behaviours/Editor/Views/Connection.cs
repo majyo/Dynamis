@@ -24,5 +24,10 @@ namespace Dynamis.Behaviours.Editor.Views
         {
             return InputPort.Position;
         }
+
+        public override string ToString()
+        {
+            return $"Connection from {OutputPort} to {InputPort}, Color: {ConnectionColor}, Width: {LineWidth}";
+        }
     }
 }
