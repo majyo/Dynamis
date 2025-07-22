@@ -1,193 +1,175 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Dynamis.Behaviours.Runtimes.Blackboards;
 using UnityEngine;
 
 namespace Dynamis.Behaviours.Runtimes
 {
-    /// <summary>
-    /// 行为树节点状态
-    /// </summary>
-    public enum NodeState
+    public enum SearchStrategy
     {
-        Running,
-        Success,
-        Failure
+        Bfs,
+        Dfs
     }
 
-    /// <summary>
-    /// 行为树节点基类
-    /// </summary>
-    public abstract class BehaviourNode
+    public class BehaviourTree : ScriptableObject
     {
-        public string name;
-        public BehaviourNode parent;
-        public readonly List<BehaviourNode> children = new();
-        
-        protected NodeState state = NodeState.Failure;
-        protected bool started;
+        [SerializeField] private Node rootNode;
+        [SerializeField] private List<Node> nodes = new();
+        [SerializeField] private NodeState treeState = NodeState.Running;
+        [SerializeField] private Blackboard blackboard = new();
 
-        public NodeState State => state;
+        public Node RootNode 
+        { 
+            get => rootNode; 
+            set => rootNode = value; 
+        }
 
-        /// <summary>
-        /// 更新节点
-        /// </summary>
+        public List<Node> Nodes => nodes;
+        public NodeState TreeState => treeState;
+        public Blackboard Blackboard => blackboard;
+
+        public void Reset()
+        {
+            if (rootNode != null)
+            {
+                rootNode.Reset();
+            }
+            // Reset blackboard if needed
+            // blackboard.Clear(); // Uncomment if you want to clear blackboard on reset
+        }
+
         public NodeState Update()
         {
-            if (!started)
+            if (rootNode == null)
+                return NodeState.Failure;
+                
+            treeState = rootNode.Update();
+            return treeState;
+        }
+
+        public void AddNode(Node node)
+        {
+            if (!nodes.Contains(node))
             {
-                OnStart();
-                started = true;
-            }
-
-            state = OnUpdate();
-
-            if (state is NodeState.Failure or NodeState.Success)
-            {
-                OnStop();
-                started = false;
-            }
-
-            return state;
-        }
-
-        /// <summary>
-        /// 添加子节点
-        /// </summary>
-        public virtual BehaviourNode AddChild(BehaviourNode child)
-        {
-            child.parent = this;
-            children.Add(child);
-            return child;
-        }
-
-        /// <summary>
-        /// 移除子节点
-        /// </summary>
-        public virtual void RemoveChild(BehaviourNode child)
-        {
-            children.Remove(child);
-            child.parent = null;
-        }
-
-        /// <summary>
-        /// 克隆节点 - 创建节点的深拷贝
-        /// </summary>
-        public BehaviourNode Clone()
-        {
-            // 创建节点实例
-            BehaviourNode clone = CreateClone();
-            
-            // 复制基本属性
-            clone.name = name;
-            
-            // 克隆所有子节点
-            foreach (var child in children)
-            {
-                clone.AddChild(child.Clone());
-            }
-            
-            return clone;
-        }
-
-        /// <summary>
-        /// 创建节点的克隆实例 - 子类需要重写此方法来复制特定状态
-        /// </summary>
-        protected virtual BehaviourNode CreateClone()
-        {
-            return System.Activator.CreateInstance(GetType()) as BehaviourNode;
-        }
-
-        /// <summary>
-        /// 中止执行
-        /// </summary>
-        public void Abort()
-        {
-            BehaviourTree.Traverse(this, (node) =>
-            {
-                node.started = false;
-                node.state = NodeState.Failure;
-                node.OnStop();
-            });
-        }
-
-        protected virtual void OnStart() { }
-        protected abstract NodeState OnUpdate();
-        protected virtual void OnStop() { }
-    }
-
-    /// <summary>
-    /// 行为树运行器
-    /// </summary>
-    public class BehaviourTree : MonoBehaviour
-    {
-        [SerializeField] private bool runOnUpdate = true;
-        [SerializeField] private float updateInterval = 0.1f;
-
-        private float _lastUpdateTime;
-        public Blackboard Blackboard { get; private set; }
-
-        public BehaviourNode RootNode { get; set; }
-
-        private void Awake()
-        {
-            Blackboard = GetComponent<Blackboard>();
-            if (Blackboard == null)
-            {
-                Blackboard = gameObject.AddComponent<Blackboard>();
+                nodes.Add(node);
+                node.SetBehaviourTree(this);
             }
         }
 
-        private void Start()
+        public void RemoveNode(Node node)
         {
-            if (RootNode != null)
+            nodes.Remove(node);
+        }
+
+        public void Traverse(Action<Node> action, SearchStrategy order = SearchStrategy.Bfs)
+        {
+            if (rootNode == null || action == null)
+                return;
+
+            if (order == SearchStrategy.Bfs)
             {
-                RootNode = RootNode.Clone();
+                TraverseBfs(action);
+            }
+            else
+            {
+                TraverseDfs(action);
             }
         }
 
-        private void Update()
+        private void TraverseBfs(Action<Node> action)
         {
-            if (runOnUpdate && RootNode != null && Time.time - _lastUpdateTime >= updateInterval)
+            var queue = PoolUtils.GetQueue();
+            var children = PoolUtils.GetList();
+            try
             {
-                RootNode.Update();
-                _lastUpdateTime = Time.time;
-            }
-        }
+                queue.Enqueue(rootNode);
 
-        /// <summary>
-        /// 手动执行一次行为树
-        /// </summary>
-        public NodeState Tick()
-        {
-            return RootNode?.Update() ?? NodeState.Failure;
-        }
-
-        /// <summary>
-        /// 遍历节点
-        /// </summary>
-        public static void Traverse(BehaviourNode node, System.Action<BehaviourNode> visitor)
-        {
-            if (node != null)
-            {
-                visitor.Invoke(node);
-                foreach (var child in node.children)
+                while (queue.Count > 0)
                 {
-                    Traverse(child, visitor);
+                    var currentNode = queue.Dequeue();
+                    action(currentNode);
+
+                    // Get child nodes and add them to the queue
+                    GetChildren(currentNode, children);
+                    
+                    foreach (var child in children)
+                    {
+                        if (child != null)
+                        {
+                            queue.Enqueue(child);
+                        }
+                    }
+                    
+                    children.Clear();
                 }
             }
+            finally
+            {
+                PoolUtils.ReleaseQueue(queue);
+            }
         }
 
-        /// <summary>
-        /// 创建行为树
-        /// </summary>
-        public static BehaviourTree CreateTree(GameObject gameObject, BehaviourNode rootNode)
+        private void TraverseDfs(Action<Node> action)
         {
-            var tree = gameObject.GetComponent<BehaviourTree>();
-            if (tree == null)
+            var stack = PoolUtils.GetStack();
+            var children = PoolUtils.GetList();
+            try
             {
-                tree = gameObject.AddComponent<BehaviourTree>();
+                stack.Push(rootNode);
+
+                while (stack.Count > 0)
+                {
+                    var currentNode = stack.Pop();
+                    action(currentNode);
+
+                    // Get child nodes and add them to the stack in reverse order (so they are visited in the correct order during traversal)
+                    GetChildren(currentNode, children);
+                    
+                    for (int i = children.Count - 1; i >= 0; i--)
+                    {
+                        if (children[i] != null)
+                            stack.Push(children[i]);
+                    }
+                    
+                    children.Clear();
+                }
             }
-            
-            tree.RootNode = rootNode;
+            finally
+            {
+                PoolUtils.ReleaseStack(stack);
+                PoolUtils.ReleaseList(children);
+            }
+        }
+
+        private static void GetChildren(Node node, List<Node> children)
+        {
+            switch (node)
+            {
+                case CompositeNode composite:
+                    children.AddRange(composite.Children);
+                    break;
+                case DecoratorNode decorator when decorator.Child != null:
+                    children.Add(decorator.Child);
+                    break;
+            }
+        }
+
+        public BehaviourTree Clone()
+        {
+            var tree = Instantiate(this);
+            tree.rootNode = rootNode?.Clone();
+            tree.nodes = new List<Node>();
+            tree.blackboard = blackboard.Clone();
+
+            if (tree.rootNode != null)
+            {
+                tree.Traverse(node =>
+                {
+                    tree.nodes.Add(node);
+                    node.SetBehaviourTree(tree);
+                });
+            }
+                
             return tree;
         }
     }
